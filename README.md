@@ -4,15 +4,30 @@
 
 ## Overview
 
-**lua-cryptorandom** is a lightweight, native library for Lua aimed to generate cryptographically-secure pseudo-random bytes and numbers, using trusted sources of randomness provided by the operating system.
+**lua-cryptorandom** is a lightweight, native library for Lua aimed to generate cryptographically secure pseudo random numbers, using trusted sources of randomness provided by the operating system.
 
-* On Unix-like distributions, it uses the ```OpenSSL``` library to generate random bytes and numbers;
+* On Unix-like distributions, it uses the ```OpenSSL``` library to generate random numbers;
 * On Windows, it uses the WINAPI ```bcrypt``` library;
 * On macOS / iOS, it uses the ```Security``` framework.
 
 > [!NOTE]
 > 
 > ```lua-cryptorandom``` is implemented in C, and also compiles as C++.
+
+> [!WARNING]
+> 
+> Are you using a personalized compilation of Lua? See the [known limitations](#known-limitations).
+
+## Use cases
+
+Many security operations rely on the high-quality of randomization services to avoid reproducibility and remain resistant to reverse engineering:
+
+* randomized password generation;
+* nonces (numbers used once) generation;
+* initialization vectors;
+* salts in passwords before hashing;
+* tokenization (*token generation*) to represent sensitive data;
+* secure random sampling in statistical analysis.
 
 ## Table of Contents
 
@@ -21,7 +36,8 @@
     * [bytes](#bytes)
     * [integer](#integer)
     * [number](#number)
-    * [seed](#seed)
+    * [take](#take)
+* [Known limitations](#known-limitations)
 * [Change log](#change-log)
 * [Future works](#future-works)
 
@@ -58,7 +74,7 @@ luarocks install lua-cryptorandom
 
 > [!IMPORTANT]
 > 
-> For each method below, always check whether the first returned value is ```nil``` or not. When the first value is ```nil```, there was an underlying error generating random values. It can fail because no trusted random source is available or the trusted source temporarily fail to provide sufficient randomness material.
+> For each method below, always check whether the first returned value is ```nil``` or not. When the first value is ```nil```, there was an underlying error generating random values. It can fail because no trusted random source is available or the trusted entropy source temporarily fail to provide sufficient randomness material.
 
 ### bytes
 
@@ -67,8 +83,8 @@ luarocks install lua-cryptorandom
     * *Parameters*:
         * *n*: the number of bytes to generate
     * *Return*: ```table | nil``` as first value, and ```nil | number``` as the second.
-        1. ```table | nil```: a table containing ```n``` bytes on success, or ```nil``` when an error occurred;
-        2. ```nil | integer```: an error code that is set to ```nil``` on success, or an ```integer``` representing the code used by the underlying library (```OpenSSL``` on Unix, ```bcrypt``` on Windows and ```Security``` framework on macOS / iOS).
+        * ```table | nil```: a table containing ```n``` bytes on success, or ```nil``` when an error occurred;
+        * ```nil | integer```: an error code that is set to ```nil``` on success, or an ```integer``` representing the code used by the underlying library (```OpenSSL``` on Unix, ```bcrypt``` on Windows and ```Security``` framework on macOS / iOS).
 * *Remark*: Here, a byte is meant as an integer in the range 0 - 255.
 * *Usage*:
 
@@ -97,9 +113,9 @@ luarocks install lua-cryptorandom
 * *Description*: Generates a random integer
 * *Signature*: ```integer()```
     * *Return*: ```integer | nil``` as first value, and ```nil | integer``` as the second.
-        1. ```integer | nil```: the generated integer on success, or ```nil``` when an error occurred;
-        2. ```nil | integer```: an error code that is set to ```nil``` on success, or an ```integer``` representing the code used by the underlying library (```OpenSSL``` on Unix, ```bcrypt``` on Windows and ```Security``` framework on macOS / iOS).
-* *Remark*: The generated integer can be any valid Lua integer, and such integer can span up to 64 bits. Use this function when you need a potentially large integer. For smaller integers, see [seed](#seed).
+        * ```integer | nil```: the generated integer on success, or ```nil``` when an error occurred;
+        * ```nil | integer```: an error code that is set to ```nil``` on success, or an ```integer``` representing the code used by the underlying library (```OpenSSL``` on Unix, ```bcrypt``` on Windows and ```Security``` framework on macOS / iOS).
+* *Remark*: The generated integer can be any valid Lua integer, and such integer can span up to 64 bits. Use this function when you need a potentially large integer. For smaller integers, see [take](#take).
 * *Usage*:
 
     ```lua
@@ -119,8 +135,8 @@ luarocks install lua-cryptorandom
 * *Description*: Generates a random float number
 * *Signature*: ```number()```
     * *Return*: ```number | nil``` as first value, and ```nil | integer``` as the second.
-        1. ```number | nil```: the generated float number on success, or ```nil``` when an error occurred;
-        2. ```nil | integer```: an error code that is set to ```nil``` on success, or an ```integer``` representing the code used by the underlying library (```OpenSSL``` on Unix, ```bcrypt``` on Windows and ```Security``` framework on macOS / iOS).
+        * ```number | nil```: the generated float number on success, or ```nil``` when an error occurred;
+        * ```nil | integer```: an error code that is set to ```nil``` on success, or an ```integer``` representing the code used by the underlying library (```OpenSSL``` on Unix, ```bcrypt``` on Windows and ```Security``` framework on macOS / iOS).
 * *Usage*:
 
     ```lua
@@ -135,27 +151,31 @@ luarocks install lua-cryptorandom
     end
     ```
 
-### seed
+### take
 
-* *Description*: Generates a random seed integer
-* *Signature*: ```seed()```
+* *Description*: Generates a random integer that spans at least 16 bits in size, but usually 32 bits in these-days-computers.
+* *Signature*: ```take()```
     * *Return*: ```integer | nil``` as first value, and ```nil | integer``` as the second.
-        1. ```integer | nil```: the generated integer on success, or ```nil``` when an error occurred;
-        2. ```nil | integer```: an error code that is set to ```nil``` on success, or an ```integer``` representing the code used by the underlying library (```OpenSSL``` on Unix, ```bcrypt``` on Windows and ```Security``` framework on macOS / iOS).
+        * ```integer | nil```: the generated integer on success, or ```nil``` when an error occurred;
+        * ```nil | integer```: an error code that is set to ```nil``` on success, or an ```integer``` representing the code used by the underlying library (```OpenSSL``` on Unix, ```bcrypt``` on Windows and ```Security``` framework on macOS / iOS).
 * *Remark*: The generated integer has, at least, 16 bits in size, but it is usually a 32 bits integer in these-day-computers. The returned integer has the ```int``` data type in C. To generate potentially large integers, see [integer](#integer).
 * *Usage*:
 
     ```lua
     local random = require("lua-cryptorandom")
 
-    local seed, err = random.seed()
+    local take, err = random.take()
 
-    if (seed == nil) then
+    if (take == nil) then
         print("error code: ", err)
     else
-        print("seed: ", seed)
+        print("take: ", take)
     end
     ```
+
+## Known limitations
+
+* The error code (second return value) on each method might deliver a value different than the one returned by the underlying library. This condition might happen when the Lua type ```lua_Integer``` is shorter than an ```unsigned long``` in size. Even though it can be achieved on personalized compilations of Lua (e.g.: Lua compiled as ANSI C), the usual build of Lua should be safe for most users and platforms.
 
 ## Change log
 

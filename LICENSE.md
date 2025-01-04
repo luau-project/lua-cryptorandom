@@ -1,6 +1,6 @@
 The MIT License (MIT)
 
-Copyright (c) 2025 luau-project [https://github.com/luau-project/lua-uuid](https://github.com/luau-project/lua-cryptorandom)
+Copyright (c) 2025 luau-project [https://github.com/luau-project/lua-cryptorandom](https://github.com/luau-project/lua-cryptorandom)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

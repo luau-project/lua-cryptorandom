@@ -8,9 +8,9 @@ source = {
 
 description = {
    homepage = "https://github.com/luau-project/lua-cryptorandom",
-   summary = [[Generate cryptographically-secure pseudo-random bytes and numbers for Lua]],
+   summary = [[Generate cryptographically secure pseudo random numbers for Lua]],
    detailed = [=[
-lua-cryptorandom is a lightweight, native library for Lua aimed to generate cryptographically-secure pseudo-random bytes and numbers, using trusted sources of randomness provided by the operating system.
+lua-cryptorandom is a lightweight, native library for Lua aimed to generate cryptographically secure pseudo random numbers, using trusted sources of randomness provided by the operating system.
 
 Visit the repository for more information.]=],
    license = "MIT"

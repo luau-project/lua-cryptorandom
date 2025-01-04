@@ -90,7 +90,7 @@ static int lua_cryptorandom_bytes(lua_State *L)
     return 2;
 }
 
-static int lua_cryptorandom_seed(lua_State *L)
+static int lua_cryptorandom_take(lua_State *L)
 {
     unsigned char buffer[sizeof(int)];
 
@@ -102,8 +102,8 @@ static int lua_cryptorandom_seed(lua_State *L)
     }
     else
     {
-        int *seed_ptr = (int *)buffer;
-        lua_pushinteger(L, *seed_ptr);
+        int *take_ptr = (int *)buffer;
+        lua_pushinteger(L, *take_ptr);
         lua_pushnil(L);
     }
 
@@ -122,8 +122,8 @@ static int lua_cryptorandom_integer(lua_State *L)
     }
     else
     {
-        lua_Integer *seed_ptr = (lua_Integer *)buffer;
-        lua_pushinteger(L, *seed_ptr);
+        lua_Integer *take_ptr = (lua_Integer *)buffer;
+        lua_pushinteger(L, *take_ptr);
         lua_pushnil(L);
     }
 
@@ -142,8 +142,8 @@ static int lua_cryptorandom_number(lua_State *L)
     }
     else
     {
-        lua_Number *seed_ptr = (lua_Number *)buffer;
-        lua_pushnumber(L, *seed_ptr);
+        lua_Number *take_ptr = (lua_Number *)buffer;
+        lua_pushnumber(L, *take_ptr);
         lua_pushnil(L);
     }
 
@@ -158,7 +158,7 @@ static int lua_cryptorandom_new_index(lua_State *L)
 
 static const luaL_Reg lua_cryptorandom_public_functions[] = {
     {"bytes", lua_cryptorandom_bytes},
-    {"seed", lua_cryptorandom_seed},
+    {"take", lua_cryptorandom_take},
     {"integer", lua_cryptorandom_integer},
     {"number", lua_cryptorandom_number},
     {NULL, NULL}

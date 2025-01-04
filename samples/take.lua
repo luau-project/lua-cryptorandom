@@ -1,9 +1,9 @@
 local random = require("lua-cryptorandom")
 
-local seed, err = random.seed()
+local take, err = random.take()
 
-if (seed == nil) then
+if (take == nil) then
     print("error code: ", err)
 else
-    print("seed: ", seed)
+    print("take: ", take)
 end
