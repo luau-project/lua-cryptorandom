@@ -1,0 +1,553 @@
+name: CI
+
+on:
+  push:
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+  pull_request:
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+
+env:
+  ROCKSPEC_VERSION: 0.0.1
+  DEV_ROCKSPEC: lua-cryptorandom-dev-1.rockspec
+
+jobs:
+  
+  cplusplus-build:
+    name: Build C++
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: pwsh
+    
+    strategy:
+      matrix:
+        
+        lua-version:
+          - 5.1.5
+          - 5.2.4
+          - 5.3.6
+          - 5.4.7
+        
+        use-clang:
+          - 'true'
+          - 'false'
+      
+    steps:
+
+      - name: Validate Lua version
+        run: |
+          if (-not ("${{ matrix.lua-version }}" -match "^(\d+)\.(\d+)(\.\d+)*$"))
+          {
+            Write-Host "Invalid Lua version (X.Y.Z) expected";
+            exit 1;
+          }
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: lua-cryptorandom
+
+      - name: Install dependencies
+        run: sudo apt install -y libssl-dev libreadline-dev
+
+      - name: Install clang
+        if: ${{ matrix.use-clang == 'true' }}
+        run: sudo apt install -y clang
+
+      - name: Download and extract Lua ${{ matrix.lua-version }} source code, and set environment variables
+        run: |
+          $targz = "lua-${{ matrix.lua-version }}.tar.gz";
+          $targz_path = Join-Path -Path "${{ runner.temp }}" -ChildPath $targz;
+
+          Invoke-WebRequest -Uri "https://lua.org/ftp/${targz}" -OutFile "$targz_path";
+          tar -C "${{ runner.temp }}" -xf "$targz_path";
+
+          $lua_source_dir = Join-Path -Path "${{ runner.temp }}" -ChildPath "lua-${{ matrix.lua-version }}";
+
+          if (-not (Test-Path $lua_source_dir))
+          {
+            $color = (0x1b -as [char]) + "[36m";
+
+            Write-Host "Unable to find Lua source code directory: ${color}${lua_source_dir}";
+
+            exit 1;
+          }
+
+          $install_dir = Join-Path -Path "${{ runner.temp }}" -ChildPath "installed-lua-${{ matrix.lua-version }}";
+          
+          if ("${{ matrix.use-clang }}" -eq "true")
+          {
+            Add-Content "${{ github.env }}" "CC=clang++";
+          }
+          else
+          {
+            Add-Content "${{ github.env }}" "CC=g++";
+          }
+          Add-Content "${{ github.env }}" "LUA_SRC_DIR=${lua_source_dir}";
+          Add-Content "${{ github.env }}" "LUA_DIR=${install_dir}";
+      
+      - name: Build Lua ${{ matrix.lua-version }}
+        run: |
+          make -C "${{ env.LUA_SRC_DIR }}" `
+            linux `
+            "CC=${{ env.CC }}";
+      
+      - name: Install Lua ${{ matrix.lua-version }}, and set environment variables
+        run: |
+          make -C "${{ env.LUA_SRC_DIR }}" `
+            install `
+            "INSTALL_TOP=${{ env.LUA_DIR }}";
+
+          $lua_bindir = Join-Path -Path "${{ env.LUA_DIR }}" -ChildPath "bin";
+          $lua_incdir = Join-Path -Path "${{ env.LUA_DIR }}" -ChildPath "include";
+
+          Add-Content "${{ github.path }}" "${lua_bindir}";
+          Add-Content "${{ github.env }}" "LUA_INCDIR=${lua_incdir}";
+      
+      - name: Compile lua-cryptorandom
+        working-directory: lua-cryptorandom
+        run: |
+          ${{ env.CC }} `
+            "-O2" `
+            "-Wall" `
+            "-c" `
+            "-fPIC" `
+            "-o" "src/lua-cryptorandom.o" `
+            "-I${{ env.LUA_INCDIR }}" `
+            "-Isrc" `
+            "-DLUA_CRYPTORANDOM_BUILD_SHARED" `
+            "-DLUA_CRYPTORANDOM_USE_OPENSSL" `
+            "src/lua-cryptorandom.c";
+ 
+      - name: Link lua-cryptorandom
+        working-directory: lua-cryptorandom
+        run: |
+          ${{ env.CC }} "-shared" `
+            "-o" "lua-cryptorandom.so" `
+            "src/lua-cryptorandom.o" `
+            "-ldl" `
+            "-lcrypto";
+ 
+      - name: Run samples
+        working-directory: lua-cryptorandom
+        run: |
+          Get-ChildItem "samples" -Recurse -File |
+            Where-Object Extension -EQ ".lua" |
+            Select-Object -ExpandProperty FullName |
+            Foreach-Object {
+              $color = (0x1b -as [char]) + "[36m";
+
+              Write-Host "Running sample file: ${color}$_";
+
+              lua "$_";
+
+              if ($LASTEXITCODE -ne 0)
+              {
+                exit 1;
+              }
+            };
+  
+  clang-build:
+    name: Clang Build
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: pwsh
+    
+    strategy:
+      matrix:
+        
+        lua-version:
+          - 5.1.5
+          - 5.2.4
+          - 5.3.6
+          - 5.4.7
+      
+    steps:
+
+      - name: Validate Lua version
+        run: |
+          if (-not ("${{ matrix.lua-version }}" -match "^(\d+)\.(\d+)(\.\d+)*$"))
+          {
+            Write-Host "Invalid Lua version (X.Y.Z) expected";
+            exit 1;
+          }
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: lua-cryptorandom
+
+      - name: Install dependencies
+        run: sudo apt install -y libssl-dev libreadline-dev clang
+
+      - name: Download and extract Lua ${{ matrix.lua-version }} source code, and set environment variables
+        run: |
+          $targz = "lua-${{ matrix.lua-version }}.tar.gz";
+          $targz_path = Join-Path -Path "${{ runner.temp }}" -ChildPath $targz;
+
+          Invoke-WebRequest -Uri "https://lua.org/ftp/${targz}" -OutFile "$targz_path";
+          tar -C "${{ runner.temp }}" -xf "$targz_path";
+
+          $lua_source_dir = Join-Path -Path "${{ runner.temp }}" -ChildPath "lua-${{ matrix.lua-version }}";
+
+          if (-not (Test-Path $lua_source_dir))
+          {
+            $color = (0x1b -as [char]) + "[36m";
+
+            Write-Host "Unable to find Lua source code directory: ${color}${lua_source_dir}";
+
+            exit 1;
+          }
+
+          $install_dir = Join-Path -Path "${{ runner.temp }}" -ChildPath "installed-lua-${{ matrix.lua-version }}";
+          
+          Add-Content "${{ github.env }}" "CC=clang";
+          Add-Content "${{ github.env }}" "LUA_SRC_DIR=${lua_source_dir}";
+          Add-Content "${{ github.env }}" "LUA_DIR=${install_dir}";
+      
+      - name: Build Lua ${{ matrix.lua-version }}
+        run: |
+          make -C "${{ env.LUA_SRC_DIR }}" `
+            linux `
+            "CC=${{ env.CC }}";
+      
+      - name: Install Lua ${{ matrix.lua-version }}, and set environment variables
+        run: |
+          make -C "${{ env.LUA_SRC_DIR }}" `
+            install `
+            "INSTALL_TOP=${{ env.LUA_DIR }}";
+
+          $lua_bindir = Join-Path -Path "${{ env.LUA_DIR }}" -ChildPath "bin";
+          $lua_incdir = Join-Path -Path "${{ env.LUA_DIR }}" -ChildPath "include";
+
+          Add-Content "${{ github.path }}" "${lua_bindir}";
+          Add-Content "${{ github.env }}" "LUA_INCDIR=${lua_incdir}";
+      
+      - name: Compile lua-cryptorandom
+        working-directory: lua-cryptorandom
+        run: |
+          ${{ env.CC }} `
+            "-O2" `
+            "-Wall" `
+            "-c" `
+            "-fPIC" `
+            "-o" "src/lua-cryptorandom.o" `
+            "-I${{ env.LUA_INCDIR }}" `
+            "-Isrc" `
+            "-DLUA_CRYPTORANDOM_BUILD_SHARED" `
+            "-DLUA_CRYPTORANDOM_USE_OPENSSL" `
+            "src/lua-cryptorandom.c";
+ 
+      - name: Link lua-cryptorandom
+        working-directory: lua-cryptorandom
+        run: |
+          ${{ env.CC }} "-shared" `
+            "-o" "lua-cryptorandom.so" `
+            "src/lua-cryptorandom.o" `
+            "-ldl" `
+            "-lcrypto";
+ 
+      - name: Run samples
+        working-directory: lua-cryptorandom
+        run: |
+          Get-ChildItem "samples" -Recurse -File |
+            Where-Object Extension -EQ ".lua" |
+            Select-Object -ExpandProperty FullName |
+            Foreach-Object {
+              $color = (0x1b -as [char]) + "[36m";
+
+              Write-Host "Running sample file: ${color}$_";
+
+              lua "$_";
+
+              if ($LASTEXITCODE -ne 0)
+              {
+                exit 1;
+              }
+            };
+  
+  build:
+    name: Build
+    runs-on: ${{ matrix.os }}
+    
+    defaults:
+      run:
+        shell: pwsh
+
+    strategy:
+      matrix:
+        
+        lua-version:
+          - 5.1
+          - 5.2
+          - 5.3
+          - 5.4
+          - luajit
+
+        os:
+          - windows-latest
+          - ubuntu-latest
+          - macos-latest
+        
+        exclude:
+          - os: macos-latest
+            lua-version: luajit
+    
+    steps:
+
+      - name: Set environment variable to hold the rockspec name
+        run: |
+          if ("${{ github.repository }}" -eq "luau-project/lua-cryptorandom" -and "${{ github.ref_name }}" -eq "v${{ env.ROCKSPEC_VERSION }}" -and "${{ github.ref }}" -eq "refs/tags/v${{ env.ROCKSPEC_VERSION }}")
+          {
+            Add-Content "${{ github.env }}" "ROCKSPEC=lua-cryptorandom-${{ env.ROCKSPEC_VERSION }}-1.rockspec";
+          }
+          else
+          {
+            Add-Content "${{ github.env }}" "ROCKSPEC=${{ env.DEV_ROCKSPEC }}";
+          }
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: lua-cryptorandom
+
+      - name: Install libssl-dev
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: sudo apt install -y libssl-dev
+
+      - name: Setup MSVC dev-prompt
+        if: ${{ matrix.os == 'windows-latest' && matrix.lua-version != 'luajit' }}
+        uses: ilammy/msvc-dev-cmd@v1
+      
+      - name: Setup Lua
+        uses: luarocks/gh-actions-lua@v10
+        with:
+          luaVersion: ${{ matrix.lua-version }}
+      
+      - name: Setup LuaRocks
+        uses: luarocks/gh-actions-luarocks@v5
+      
+      - name: Lint rockspecs
+        working-directory: lua-cryptorandom
+        run: |
+          Get-ChildItem . -Recurse -File |
+            Where-Object Extension -Eq ".rockspec" |
+            Select-Object -ExpandProperty FullName |
+            Foreach-Object {
+              $color = (0x1b -as [char]) + "[36m";
+
+              Write-Host "Linting rockspec: ${color}$_";
+
+              luarocks lint "$_";
+
+              if ($LASTEXITCODE -ne 0)
+              {
+                exit 1;
+              }
+            }
+
+      - name: Build lua-cryptorandom
+        working-directory: lua-cryptorandom
+        run: |
+          $rockspec = Get-ChildItem . -Recurse -File |
+            Where-Object Name -EQ "${{ env.ROCKSPEC }}" |
+            Select-Object -ExpandProperty FullName -First 1;
+          
+          $color = (0x1b -as [char]) + "[36m";
+          Write-Host "Building rockspec file: ${color}${rockspec}";
+          
+          luarocks make $rockspec;
+
+      - name: Run samples
+        working-directory: lua-cryptorandom
+        run: |
+          Get-ChildItem "samples" -Recurse -File |
+            Where-Object Extension -EQ ".lua" |
+            Select-Object -ExpandProperty FullName |
+            Foreach-Object {
+              $color = (0x1b -as [char]) + "[36m";
+
+              Write-Host "Running sample file: ${color}$_";
+
+              lua "$_";
+
+              if ($LASTEXITCODE -ne 0)
+              {
+                exit 1;
+              }
+            };
+  
+  msys2-build:
+    name: MSYS2 Build
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    strategy:
+      matrix:
+        
+        MSYS2_CONFIG:
+          - { sys: mingw64, env: x86_64 }
+          - { sys: ucrt64, env: ucrt-x86_64 }
+          - { sys: clang64, env: clang-x86_64 }
+        
+        Lua:
+          - { version: '5.4', msys2-pkg-name: 'lua', msys2-lua-interpreter: 'lua' }
+          - { version: '5.3', msys2-pkg-name: 'lua53', msys2-lua-interpreter: 'lua5.3' }
+          - { version: '5.1', msys2-pkg-name: 'lua51', msys2-lua-interpreter: 'lua5.1' }
+          - { version: '5.1', msys2-pkg-name: 'luajit', msys2-lua-interpreter: 'luajit' }
+      
+    env:
+      LUA_INTERPRETER: /${{ matrix.MSYS2_CONFIG.sys }}/bin/${{ matrix.Lua.msys2-lua-interpreter }}
+
+    steps:
+
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.MSYS2_CONFIG.sys }}
+          install: |
+            base-devel
+            git
+            mingw-w64-${{ matrix.MSYS2_CONFIG.env }}-cc
+            mingw-w64-${{ matrix.MSYS2_CONFIG.env }}-${{ matrix.Lua.msys2-pkg-name }}
+            mingw-w64-${{ matrix.MSYS2_CONFIG.env }}-lua-luarocks
+      
+      - name: Set environment variable to hold the rockspec name
+        run: |
+          if [[ "${{ github.repository }}" == "luau-project/lua-cryptorandom" ]] && [[ "${{ github.ref_name }}" == "v${{ env.ROCKSPEC_VERSION }}" ]] && [[ "${{ github.ref }}" == "refs/tags/v${{ env.ROCKSPEC_VERSION }}" ]];
+          then
+            echo "ROCKSPEC=lua-cryptorandom-${{ env.ROCKSPEC_VERSION }}-1.rockspec" >> "${{ github.env }}";
+          else
+            echo "ROCKSPEC=${{ env.DEV_ROCKSPEC }}" >> "${{ github.env }}";
+          fi;
+      
+      - name: Configure LuaRocks
+        run: |
+          source /etc/makepkg_mingw.conf
+          echo "CC=/${{ matrix.MSYS2_CONFIG.sys }}/bin/${CC}" >> "${{ github.env }}"
+          echo "CFLAGS=${CFLAGS}" >> "${{ github.env }}"
+          luarocks config lua_version "${{ matrix.Lua.version }}"
+          luarocks config lua_dir "/${{ matrix.MSYS2_CONFIG.sys }}"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: lua-cryptorandom
+      
+      - name: Lint rockspecs
+        working-directory: lua-cryptorandom
+        run: |
+          for rockspec in rockspecs/*.rockspec;
+          do
+            echo -e "Linting rockspec: \e[36m${rockspec}\e[0m";
+            luarocks lint "${rockspec}";
+          done;
+  
+      - name: Build lua-cryptorandom
+        working-directory: lua-cryptorandom
+        run: |
+          rockspec="rockspecs/${{ env.ROCKSPEC }}";
+          echo -e "Building rockspec: \e[36m${rockspec}\e[0m";
+
+          luarocks make ${rockspec};
+      
+      - name: Run samples
+        working-directory: lua-cryptorandom
+        run: |
+          for sample in samples/*.lua;
+          do
+            echo -e "Running sample file: \e[36m${sample}\e[0m"
+
+            ${{ env.LUA_INTERPRETER }} $sample;
+          done;
+  
+  upload-rockspec:
+    name: Upload rockspec
+    runs-on: ubuntu-latest
+    if: ${{ github.repository == 'luau-project/lua-cryptorandom' && github.ref_type == 'tag' }}
+    needs:
+      - cplusplus-build
+      - clang-build
+      - build
+      - msys2-build
+
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+
+      - name: Set environment variable to hold the rockspec name
+        run: |
+          if ("${{ github.repository }}" -eq "luau-project/lua-cryptorandom" -and "${{ github.ref_name }}" -eq "v${{ env.ROCKSPEC_VERSION }}" -and "${{ github.ref }}" -eq "refs/tags/v${{ env.ROCKSPEC_VERSION }}")
+          {
+            Add-Content "${{ github.env }}" "ROCKSPEC=lua-cryptorandom-${{ env.ROCKSPEC_VERSION }}-1.rockspec";
+          }
+          else
+          {
+            $color = (0x1b -as [char]) + "[31m";
+
+            Write-Host "${color}Unexpected upload condition for the tag";
+            exit 1;
+          }
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: lua-cryptorandom
+
+      - name: Setup Lua
+        uses: luarocks/gh-actions-lua@v10
+      
+      - name: Setup LuaRocks
+        uses: luarocks/gh-actions-luarocks@v5
+
+      - name: Make sure that tags from GitHub and rockspec are equal
+        run: |
+          $rockspec = Get-ChildItem . -Recurse -File |
+            Where-Object Name -EQ "${{ env.ROCKSPEC }}" |
+            Select-Object -ExpandProperty FullName -First 1;
+          
+          $rockspec_tag = lua -e "dofile(arg[0]); io.write(source.tag);" -- "${rockspec}";
+          $github_tag = "${{ github.ref_name }}";
+
+          if ("${rockspec_tag}" -ne "${github_tag}")
+          {
+            $color_msg = (0x1b -as [char]) + "[31m";
+            $color_reset = (0x1b -as [char]) + "[0m";
+            $color_tag = (0x1b -as [char]) + "[33m";
+
+            Write-Host "${color_msg}Tag mismatch${color_reset}: GitHub tag (${color_tag}${github_tag}${color_reset}) != rockspec tag (${color_tag}${rockspec_tag}${color_reset})";
+            exit 1;
+          }
+
+      - name: Install LuaRocks dependencies to upload
+        run: |
+          sudo apt install -y libssl-dev;
+          luarocks install dkjson;
+          luarocks install luasocket;
+          luarocks install luasec;
+      
+      - name: Upload rockspec to LuaRocks
+        working-directory: lua-cryptorandom
+        env:
+          UPLOAD_KEY: ${{ secrets.LUAROCKS_APIKEY }}
+        run: |
+          $rockspec = Get-ChildItem . -Recurse -File |
+              Where-Object Name -EQ "${{ env.ROCKSPEC }}" |
+              Select-Object -ExpandProperty FullName -First 1;
+          
+          $color = (0x1b -as [char]) + "[36m";
+          Write-Host "Uploading rockspec: ${color}${rockspec}";
+          
+          luarocks upload $rockspec "--temp-key=$env:UPLOAD_KEY" --skip-pack
