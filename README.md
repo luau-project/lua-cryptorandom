@@ -14,20 +14,11 @@
 > 
 > ```lua-cryptorandom``` is implemented in C, and also compiles as C++.
 
-## Use cases
-
-Many security operations rely on high-quality randomization services to avoid reproducibility and remain resistant to reverse engineering:
-
-* randomized password generation;
-* nonces (numbers used once) generation;
-* initialization vectors;
-* salts in passwords before hashing;
-* tokenization (*token generation*) to represent sensitive data;
-* secure random sampling in statistical analysis.
-
 ## Table of Contents
 
 * [Installation](#installation)
+* [Usage](#usage)
+* [Use cases](#use-cases)
 * [Methods](#methods)
     * [bytes](#bytes)
     * [integer](#integer)
@@ -65,6 +56,69 @@ Assuming that [LuaRocks](https://luarocks.org) is properly installed and configu
 ```bash
 luarocks install lua-cryptorandom
 ```
+
+## Usage
+
+* How to generate random bytes
+
+    ```lua
+    local random = require("lua-cryptorandom")
+
+    -- number of bytes to generate
+    local n = 10
+
+    local bytes, err = random.bytes(n)
+
+    if (bytes == nil) then
+        print("error code: ", err)
+    else
+        assert(n == #bytes, "Unexpected number of bytes")
+
+        -- print each byte
+        for i, b in ipairs(bytes) do
+            print(i, ("0x%02X"):format(b))
+        end
+    end
+    ```
+
+* How to generate a random integer
+
+    ```lua
+    local random = require("lua-cryptorandom")
+
+    local take, err = random.take()
+
+    if (take == nil) then
+        print("error code: ", err)
+    else
+        print("take: ", take)
+    end
+    ```
+
+* How to generate a random float number
+
+    ```lua
+    local random = require("lua-cryptorandom")
+
+    local number, err = random.number()
+
+    if (number == nil) then
+        print("error code: ", err)
+    else
+        print("number: ", number)
+    end
+    ```
+
+## Use cases
+
+Many security operations rely on high-quality randomization services to avoid reproducibility and remain resistant to reverse engineering:
+
+* randomized password generation;
+* nonces (numbers used once) generation;
+* initialization vectors;
+* salts in passwords before hashing;
+* tokenization (*token generation*) to represent sensitive data;
+* secure random sampling in statistical analysis.
 
 ## Methods
 
@@ -176,10 +230,13 @@ luarocks install lua-cryptorandom
 > 
 > This section mostly applies to users running a customized build of Lua.
 
-* The error code (second return value) on each method might deliver a value different than the one returned by the underlying library. This condition might happen when the Lua type ```lua_Integer``` is shorter than an ```unsigned long``` in size. Even though it can be achieved on personalized builds of Lua (e.g.: Lua compiled as ANSI C on some platforms), the usual build of Lua should be safe for most users and platforms.
+* The error code (second return value) on each method might deliver a value different than the one returned by the underlying library. This condition might happen when the Lua type ```lua_Integer``` is shorter than an ```unsigned long``` in size. Even though it can be achieved on personalized builds of Lua (e.g.: Lua compiled as C89 on some platforms), the usual build of Lua should be safe for most users and platforms.
 
 ## Change log
 
+* v0.0.3:
+    * Using unions on [take](#take) to avoid alignment issues;
+    * Added the [Usage](#usage) section on README.
 * v0.0.2: Prevent the generation of ```NaN``` and positive/negative infinity values in the function [number](#number).
 * v0.0.1: Initial release.
 

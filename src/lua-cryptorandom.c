@@ -34,6 +34,17 @@
 
 /*
 ** helper union to the function
+** lua_cryptorandom_take
+*/
+typedef union tagLuaCryptoRandomInt
+{
+    int value;
+    unsigned char buffer[sizeof(int)];
+
+} LuaCryptoRandomInt;
+
+/*
+** helper union to the function
 ** lua_cryptorandom_integer
 */
 typedef union tagLuaCryptoRandomInteger
@@ -124,18 +135,17 @@ static int lua_cryptorandom_bytes(lua_State *L)
 
 static int lua_cryptorandom_take(lua_State *L)
 {
-    unsigned char buffer[sizeof(int)];
+    LuaCryptoRandomInt rtake;
 
     unsigned long err;
-    if (lua_cryptorandom_bytes_impl(L, (unsigned char *)buffer, sizeof(int), &err) == 0)
+    if (lua_cryptorandom_bytes_impl(L, (unsigned char *)(rtake.buffer), sizeof(int), &err) == 0)
     {
         lua_pushnil(L);
         lua_pushinteger(L, (lua_Integer)err);
     }
     else
     {
-        int *take_ptr = (int *)buffer;
-        lua_pushinteger(L, *take_ptr);
+        lua_pushinteger(L, rtake.value);
         lua_pushnil(L);
     }
 
