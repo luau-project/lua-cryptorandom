@@ -2,6 +2,7 @@ OBJ_EXTENSION = o
 LIB_EXTENSION = so
 CFLAGS_EXTRA = -DLUA_CRYPTORANDOM_BUILD_SHARED -DLUA_CRYPTORANDOM_USE_APPLE
 LIBFLAG_EXTRA = -framework Security
+LIB_M = -lm
 
 LUA_DIR = /usr/local
 LUA_INCDIR = $(LUA_DIR)/include
@@ -13,7 +14,7 @@ INSTALL_LIBDIR = $(INSTALL_PREFIX)/lib/lua/$(LUA_VERSION)
 all: src/lua-cryptorandom.$(LIB_EXTENSION)
 
 src/lua-cryptorandom.$(LIB_EXTENSION): src/lua-cryptorandom.$(OBJ_EXTENSION)
-	$(CC) $(LIBFLAG_EXTRA) $(LIBFLAG) -o $@ $<
+	$(CC) $(LIBFLAG_EXTRA) $(LIBFLAG) -o $@ $< $(LIB_M)
 
 src/lua-cryptorandom.$(OBJ_EXTENSION): src/lua-cryptorandom.c
 	$(CC) -c $(CFLAGS_EXTRA) $(CFLAGS) -I$(LUA_INCDIR) $< -o $@

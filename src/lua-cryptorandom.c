@@ -18,9 +18,41 @@
 #endif
 
 #include <stdlib.h>
+#include <math.h>
+
 #include <luaconf.h>
 #include <lauxlib.h>
 #include <lualib.h>
+
+#ifndef isnan
+#define isnan(x) (!((x)==(x)))
+#endif
+
+#ifndef isinf
+#define isinf(x) ((x)==(HUGE_VAL)?(1):((x)==(-HUGE_VAL)?(-1):(0)))
+#endif
+
+/*
+** helper union to the function
+** lua_cryptorandom_integer
+*/
+typedef union tagLuaCryptoRandomInteger
+{
+    lua_Integer value;
+    unsigned char buffer[sizeof(lua_Integer)];
+
+} LuaCryptoRandomInteger;
+
+/*
+** helper union to the function
+** lua_cryptorandom_number
+*/
+typedef union tagLuaCryptoRandomNumber
+{
+    lua_Number value;
+    unsigned char buffer[sizeof(lua_Number)];
+
+} LuaCryptoRandomNumber;
 
 #define LUA_CRYPTORANDOM_METATABLE "lua_cryptorandom_metatable"
 
@@ -112,18 +144,17 @@ static int lua_cryptorandom_take(lua_State *L)
 
 static int lua_cryptorandom_integer(lua_State *L)
 {
-    unsigned char buffer[sizeof(lua_Integer)];
+    LuaCryptoRandomInteger rint;
 
     unsigned long err;
-    if (lua_cryptorandom_bytes_impl(L, (unsigned char *)buffer, sizeof(lua_Integer), &err) == 0)
+    if (lua_cryptorandom_bytes_impl(L, (unsigned char *)(rint.buffer), sizeof(lua_Integer), &err) == 0)
     {
         lua_pushnil(L);
         lua_pushinteger(L, (lua_Integer)err);
     }
     else
     {
-        lua_Integer *take_ptr = (lua_Integer *)buffer;
-        lua_pushinteger(L, *take_ptr);
+        lua_pushinteger(L, rint.value);
         lua_pushnil(L);
     }
 
@@ -132,21 +163,28 @@ static int lua_cryptorandom_integer(lua_State *L)
 
 static int lua_cryptorandom_number(lua_State *L)
 {
-    unsigned char buffer[sizeof(lua_Number)];
-
+    LuaCryptoRandomNumber rnum;
     unsigned long err;
-    if (lua_cryptorandom_bytes_impl(L, (unsigned char *)buffer, sizeof(lua_Number), &err) == 0)
-    {
-        lua_pushnil(L);
-        lua_pushinteger(L, (lua_Integer)err);
-    }
-    else
-    {
-        lua_Number *take_ptr = (lua_Number *)buffer;
-        lua_pushnumber(L, *take_ptr);
-        lua_pushnil(L);
-    }
 
+    int is_nan_or_inf = 1;
+    int had_error = 0;
+
+    while (!had_error && is_nan_or_inf)
+    {
+        if (lua_cryptorandom_bytes_impl(L, (unsigned char *)(rnum.buffer), sizeof(lua_Number), &err) == 0)
+        {
+            lua_pushnil(L);
+            lua_pushinteger(L, (lua_Integer)err);
+            had_error = 1;
+        }
+        else if (!(isnan(rnum.value) || isinf(rnum.value)))
+        {
+            lua_pushnumber(L, rnum.value);
+            lua_pushnil(L);
+            is_nan_or_inf = 0;
+        }
+    }
+    
     return 2;
 }
 

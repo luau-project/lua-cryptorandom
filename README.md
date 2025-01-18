@@ -14,13 +14,9 @@
 > 
 > ```lua-cryptorandom``` is implemented in C, and also compiles as C++.
 
-> [!WARNING]
-> 
-> Are you using a personalized compilation of Lua? See the [known limitations](#known-limitations).
-
 ## Use cases
 
-Many security operations rely on the high-quality of randomization services to avoid reproducibility and remain resistant to reverse engineering:
+Many security operations rely on high-quality randomization services to avoid reproducibility and remain resistant to reverse engineering:
 
 * randomized password generation;
 * nonces (numbers used once) generation;
@@ -137,6 +133,7 @@ luarocks install lua-cryptorandom
     * *Return*: ```number | nil``` as first value, and ```nil | integer``` as the second.
         * ```number | nil```: the generated float number on success, or ```nil``` when an error occurred;
         * ```nil | integer```: an error code that is set to ```nil``` on success, or an ```integer``` representing the code used by the underlying library (```OpenSSL``` on Unix, ```bcrypt``` on Windows and ```Security``` framework on macOS / iOS).
+* *Remark*: since v0.0.2, in case of success, the returned number is not ```NaN``` or positive/negative infinity values.
 * *Usage*:
 
     ```lua
@@ -175,11 +172,16 @@ luarocks install lua-cryptorandom
 
 ## Known limitations
 
-* The error code (second return value) on each method might deliver a value different than the one returned by the underlying library. This condition might happen when the Lua type ```lua_Integer``` is shorter than an ```unsigned long``` in size. Even though it can be achieved on personalized compilations of Lua (e.g.: Lua compiled as ANSI C), the usual build of Lua should be safe for most users and platforms.
+> [!WARNING]
+> 
+> This section mostly applies to users running a customized build of Lua.
+
+* The error code (second return value) on each method might deliver a value different than the one returned by the underlying library. This condition might happen when the Lua type ```lua_Integer``` is shorter than an ```unsigned long``` in size. Even though it can be achieved on personalized builds of Lua (e.g.: Lua compiled as ANSI C on some platforms), the usual build of Lua should be safe for most users and platforms.
 
 ## Change log
 
-v0.0.1: Initial release.
+* v0.0.2: Prevent the generation of ```NaN``` and positive/negative infinity values in the function [number](#number).
+* v0.0.1: Initial release.
 
 ## Future works
 
