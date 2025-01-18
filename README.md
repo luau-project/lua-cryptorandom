@@ -18,6 +18,9 @@
 
 * [Installation](#installation)
 * [Usage](#usage)
+    * [How to generate random bytes](#how-to-generate-random-bytes)
+    * [How to generate a random float number](#how-to-generate-a-random-float-number)
+    * [How to generate a random integer](#how-to-generate-a-random-integer)
 * [Use cases](#use-cases)
 * [Methods](#methods)
     * [bytes](#bytes)
@@ -59,29 +62,47 @@ luarocks install lua-cryptorandom
 
 ## Usage
 
-* How to generate random bytes
+### How to generate random bytes
 
-    ```lua
-    local random = require("lua-cryptorandom")
+```lua
+local random = require("lua-cryptorandom")
 
-    -- number of bytes to generate
-    local n = 10
+-- number of bytes to generate
+local n = 10
 
-    local bytes, err = random.bytes(n)
+local bytes, err = random.bytes(n)
 
-    if (bytes == nil) then
-        print("error code: ", err)
-    else
-        assert(n == #bytes, "Unexpected number of bytes")
+if (bytes == nil) then
+    print("error code: ", err)
+else
+    assert(n == #bytes, "Unexpected number of bytes")
 
-        -- print each byte
-        for i, b in ipairs(bytes) do
-            print(i, ("0x%02X"):format(b))
-        end
+    -- print each byte
+    for i, b in ipairs(bytes) do
+        print(i, ("0x%02X"):format(b))
     end
-    ```
+end
+```
 
-* How to generate a random integer
+### How to generate a random float number
+
+```lua
+local random = require("lua-cryptorandom")
+
+local number, err = random.number()
+
+if (number == nil) then
+    print("error code: ", err)
+else
+    print("number: ", number)
+end
+```
+
+### How to generate a random integer
+
+There are two functions to generate integers: [take](#take) and [integer](#integer).
+
+* Generate integer (*usually in 32-bits range*):
 
     ```lua
     local random = require("lua-cryptorandom")
@@ -95,17 +116,17 @@ luarocks install lua-cryptorandom
     end
     ```
 
-* How to generate a random float number
+* Generate a potentially large integer (*in 64-bits range*):
 
     ```lua
     local random = require("lua-cryptorandom")
 
-    local number, err = random.number()
+    local integer, err = random.integer()
 
-    if (number == nil) then
+    if (integer == nil) then
         print("error code: ", err)
     else
-        print("number: ", number)
+        print("integer: ", integer)
     end
     ```
 
