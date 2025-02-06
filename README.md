@@ -6,7 +6,7 @@
 
 **lua-cryptorandom** is a lightweight, native library for Lua aimed to generate cryptographically secure pseudo random numbers, using trusted sources of randomness provided by the operating system.
 
-* On Unix-like distributions, it uses the ```OpenSSL``` library to generate random numbers;
+* On Unix-like distributions, it uses the [OpenSSL](https://www.openssl.org/) library to generate random numbers;
 * On Windows, it uses the WINAPI ```bcrypt``` library;
 * On macOS / iOS, it uses the ```Security``` framework.
 
@@ -254,7 +254,10 @@ Many security operations rely on high-quality randomization services to avoid re
 * The error code (second return value) on each method might deliver a value different than the one returned by the underlying library. This condition might happen when the Lua type ```lua_Integer``` is shorter than an ```unsigned long``` in size. Even though it can be achieved on personalized builds of Lua (e.g.: Lua compiled as C89 on some platforms), the usual build of Lua should be safe for most users and platforms.
 
 ## Change log
-
+* v0.0.4:
+    * Added the possibility for all Unix-like distributions to build and install ```lua-cryptorandom``` using the binding for ```OpenSSL```;
+    * Added a CI job to build and test ```lua-cryptorandom``` on [Cygwin](https://www.cygwin.com/);
+    * Now, as a Unix-like distribution, Cygwin builds as a Unix distro. Thus, in order to build on Cygwin, you need to install the package ```libssl-devel```.
 * v0.0.3:
     * Using unions on [take](#take) to avoid alignment issues;
     * Added the [Usage](#usage) section on README.
