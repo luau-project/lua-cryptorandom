@@ -1,8 +1,9 @@
 package = "lua-cryptorandom"
-version = "dev-1"
+version = "0.0.4-1"
 
 source = {
-   url = "git+https://github.com/luau-project/lua-cryptorandom"
+   url = "git+https://github.com/luau-project/lua-cryptorandom",
+   tag = "v0.0.4"
 }
 
 description = {
