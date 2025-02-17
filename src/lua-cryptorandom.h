@@ -3,6 +3,7 @@
 
 #include <lua.h>
 
+#ifndef LUA_CRYPTORANDOM_EXPORT
 #ifdef LUA_CRYPTORANDOM_BUILD_STATIC
 #define LUA_CRYPTORANDOM_EXPORT
 #else
@@ -27,6 +28,7 @@
 #define LUA_CRYPTORANDOM_EXPORT
 #endif /* } */
 #endif /* } */
+#endif
 #endif
 
 #ifdef __cplusplus

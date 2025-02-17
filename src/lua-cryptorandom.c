@@ -11,7 +11,7 @@
 #endif
 #include <bcrypt.h>
 #elif defined(LUA_CRYPTORANDOM_USE_APPLE)
-#include <Security/Security.h>
+#include <CommonCrypto/CommonRandom.h>
 #elif defined(LUA_CRYPTORANDOM_USE_OPENSSL)
 #include <openssl/rand.h>
 #include <openssl/err.h>
@@ -78,7 +78,7 @@ static int lua_cryptorandom_bytes_impl(lua_State *L, unsigned char *buffer, int 
     }
 
 #elif defined(LUA_CRYPTORANDOM_USE_APPLE)
-    if ((*err = SecRandomCopyBytes(kSecRandomDefault, len, buffer)) != errSecSuccess)
+    if ((*err = CCRandomGenerateBytes((void *)buffer, len)) != kCCSuccess)
     {
         result = 0;
     }
@@ -101,16 +101,17 @@ static int lua_cryptorandom_bytes(lua_State *L)
     ** fill with random bytes
     */
     int len = (int)luaL_checkinteger(L, 1);
-    
+    unsigned long err;
+    unsigned char *buffer;
+
     luaL_argcheck(L, len > 0, 1, "length must be a positive integer");
 
-    unsigned char *buffer = (unsigned char *)malloc((unsigned int)len);
+    buffer = (unsigned char *)malloc((unsigned int)len);
     if (buffer == NULL)
     {
         luaL_error(L, "Memory allocation failed");
     }
 
-    unsigned long err;
     if (lua_cryptorandom_bytes_impl(L, buffer, len, &err) == 0)
     {
         lua_pushnil(L);
@@ -201,7 +202,7 @@ static int lua_cryptorandom_number(lua_State *L)
 static int lua_cryptorandom_new_index(lua_State *L)
 {
     luaL_error(L, "Read-only object");
-    return 1;
+    return 0;
 }
 
 static const luaL_Reg lua_cryptorandom_public_functions[] = {
