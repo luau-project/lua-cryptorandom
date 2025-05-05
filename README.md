@@ -155,7 +155,7 @@ Many security operations rely on high-quality randomization services to avoid re
         * *n*: the number of bytes to generate
     * *Return*: ```table | nil``` as first value, and ```nil | number``` as the second.
         * ```table | nil```: a table containing ```n``` bytes on success, or ```nil``` when an error occurred;
-        * ```nil | integer```: an error code that is set to ```nil``` on success, or an ```integer``` representing the code used by the underlying library (```OpenSSL``` on Unix, ```bcrypt``` on Windows and ```Security``` framework on macOS / iOS).
+        * ```nil | integer```: an error code that is set to ```nil``` on success, or an ```integer``` representing the code used by the underlying library (```OpenSSL``` on Unix, ```bcrypt``` on Windows and ```CommonCrypto``` library on macOS / iOS).
 * *Remark*: Here, a byte is meant as an integer in the range 0 - 255.
 * *Usage*:
 
@@ -185,7 +185,7 @@ Many security operations rely on high-quality randomization services to avoid re
 * *Signature*: ```integer()```
     * *Return*: ```integer | nil``` as first value, and ```nil | integer``` as the second.
         * ```integer | nil```: the generated integer on success, or ```nil``` when an error occurred;
-        * ```nil | integer```: an error code that is set to ```nil``` on success, or an ```integer``` representing the code used by the underlying library (```OpenSSL``` on Unix, ```bcrypt``` on Windows and ```Security``` framework on macOS / iOS).
+        * ```nil | integer```: an error code that is set to ```nil``` on success, or an ```integer``` representing the code used by the underlying library (```OpenSSL``` on Unix, ```bcrypt``` on Windows and ```CommonCrypto``` library on macOS / iOS).
 * *Remark*: The generated integer can be any valid Lua integer, and such integer can span up to 64 bits. Use this function when you need a potentially large integer. For smaller integers, see [take](#take).
 * *Usage*:
 
@@ -207,7 +207,7 @@ Many security operations rely on high-quality randomization services to avoid re
 * *Signature*: ```number()```
     * *Return*: ```number | nil``` as first value, and ```nil | integer``` as the second.
         * ```number | nil```: the generated float number on success, or ```nil``` when an error occurred;
-        * ```nil | integer```: an error code that is set to ```nil``` on success, or an ```integer``` representing the code used by the underlying library (```OpenSSL``` on Unix, ```bcrypt``` on Windows and ```Security``` framework on macOS / iOS).
+        * ```nil | integer```: an error code that is set to ```nil``` on success, or an ```integer``` representing the code used by the underlying library (```OpenSSL``` on Unix, ```bcrypt``` on Windows and ```CommonCrypto``` library on macOS / iOS).
 * *Remark*: since v0.0.2, in case of success, the returned number is not ```NaN``` or positive/negative infinity values.
 * *Usage*:
 
@@ -229,7 +229,7 @@ Many security operations rely on high-quality randomization services to avoid re
 * *Signature*: ```take()```
     * *Return*: ```integer | nil``` as first value, and ```nil | integer``` as the second.
         * ```integer | nil```: the generated integer on success, or ```nil``` when an error occurred;
-        * ```nil | integer```: an error code that is set to ```nil``` on success, or an ```integer``` representing the code used by the underlying library (```OpenSSL``` on Unix, ```bcrypt``` on Windows and ```Security``` framework on macOS / iOS).
+        * ```nil | integer```: an error code that is set to ```nil``` on success, or an ```integer``` representing the code used by the underlying library (```OpenSSL``` on Unix, ```bcrypt``` on Windows and ```CommonCrypto``` library on macOS / iOS).
 * *Remark*: The generated integer has, at least, 16 bits in size, but it is usually a 32 bits integer in these-day-computers. The returned integer has the ```int``` data type in C. To generate potentially large integers, see [integer](#integer).
 * *Usage*:
 
