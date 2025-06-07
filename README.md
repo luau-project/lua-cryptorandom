@@ -22,6 +22,8 @@
     * [How to generate a random float number](#how-to-generate-a-random-float-number)
     * [How to generate a random integer](#how-to-generate-a-random-integer)
 * [Use cases](#use-cases)
+* [Properties](#properties)
+    * [version](#version)
 * [Methods](#methods)
     * [bytes](#bytes)
     * [integer](#integer)
@@ -141,6 +143,21 @@ Many security operations rely on high-quality randomization services to avoid re
 * tokenization (*token generation*) to represent sensitive data;
 * secure random sampling in statistical analysis.
 
+## Properties
+
+### version
+
+* *Description*: The version of this library
+* *Signature*: ```version```
+* *Usage*:
+
+    ```lua
+    local random = require("lua-cryptorandom")
+
+    -- prints the version of lua-cryptorandom
+    print(random.version)
+    ```
+
 ## Methods
 
 > [!IMPORTANT]
@@ -255,6 +272,11 @@ Many security operations rely on high-quality randomization services to avoid re
 
 ## Change log
 
+* v0.0.6:
+    * Changed the dynamic memory allocator function provided by the system to use Lua's memory allocator function;
+    * In rare cases (systems such that `sizeof(unsigned char)` is not 1), the library will not use addresses out of ranges as it could happen in earlier versions;
+    * Added a field to inform the version of the library. See [version](#version) for more information;
+    * Upload of rockspec to LuaRocks website was split to live on its own workflow. This new [publish workflow](.github/workflows/publish.yml) must be run manually by the library's owner. Going this way, in case of intermitent upload failures (connection issues or temporarily unavailable services), the library's owner can run it later again without the need to run it locally on the owner's computer.
 * v0.0.5:
     * On Apple platforms, moved from ```Security``` framework to ```CommonCrypto``` in order to use the ```builtin``` rockspec build type;
     * Removed Makefile that was used to build on Apple operating systems.

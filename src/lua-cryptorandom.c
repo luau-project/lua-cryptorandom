@@ -94,25 +94,47 @@ static int lua_cryptorandom_bytes_impl(lua_State *L, unsigned char *buffer, int 
     return result;
 }
 
+/*
+** generate 'n' random bytes
+*/
 static int lua_cryptorandom_bytes(lua_State *L)
 {
+    void *ud;
+    lua_Alloc allocf;
+    size_t buffer_size;
+    unsigned long err;
+    unsigned char *buffer;
+
     /*
     ** length of the buffer used to
     ** fill with random bytes
     */
     int len = (int)luaL_checkinteger(L, 1);
-    unsigned long err;
-    unsigned char *buffer;
 
     luaL_argcheck(L, len > 0, 1, "length must be a positive integer");
 
-    buffer = (unsigned char *)malloc((unsigned int)len);
+    buffer_size = ((size_t)len) * sizeof(unsigned char);
+
+    /*
+    ** underpromotes buffer_size to 'int', then
+    ** check if buffer_size as 'int' has the same value
+    ** as buffer_size as 'size_t'
+    */
+    luaL_argcheck(L, buffer_size == ((size_t)((int)buffer_size)), 1, "length is too long");
+
+    /* gets Lua's memory allocator function */
+    allocf = lua_getallocf(L, &ud);
+
+    /* allocate the buffer through Lua's memory allocator */
+    buffer = (unsigned char *)allocf(ud, NULL, 0, buffer_size);
+
+    /* memory allocation failed? */
     if (buffer == NULL)
     {
         luaL_error(L, "Memory allocation failed");
     }
 
-    if (lua_cryptorandom_bytes_impl(L, buffer, len, &err) == 0)
+    if (lua_cryptorandom_bytes_impl(L, buffer, ((int)buffer_size), &err) == 0)
     {
         lua_pushnil(L);
         lua_pushinteger(L, (lua_Integer)err);
@@ -129,17 +151,21 @@ static int lua_cryptorandom_bytes(lua_State *L)
         lua_pushnil(L);
     }
 
-    free(buffer);
+    /* free the buffer through Lua's memory allocator */
+    allocf(ud, (void *)buffer, buffer_size, 0);
 
     return 2;
 }
 
+/*
+** generate a random 'int'
+*/
 static int lua_cryptorandom_take(lua_State *L)
 {
     LuaCryptoRandomInt rtake;
 
     unsigned long err;
-    if (lua_cryptorandom_bytes_impl(L, (unsigned char *)(rtake.buffer), sizeof(int), &err) == 0)
+    if (lua_cryptorandom_bytes_impl(L, (unsigned char *)(rtake.buffer), sizeof(int) * sizeof(unsigned char), &err) == 0)
     {
         lua_pushnil(L);
         lua_pushinteger(L, (lua_Integer)err);
@@ -153,12 +179,15 @@ static int lua_cryptorandom_take(lua_State *L)
     return 2;
 }
 
+/*
+** generate a random 'lua_Integer'
+*/
 static int lua_cryptorandom_integer(lua_State *L)
 {
     LuaCryptoRandomInteger rint;
 
     unsigned long err;
-    if (lua_cryptorandom_bytes_impl(L, (unsigned char *)(rint.buffer), sizeof(lua_Integer), &err) == 0)
+    if (lua_cryptorandom_bytes_impl(L, (unsigned char *)(rint.buffer), sizeof(lua_Integer) * sizeof(unsigned char), &err) == 0)
     {
         lua_pushnil(L);
         lua_pushinteger(L, (lua_Integer)err);
@@ -172,6 +201,12 @@ static int lua_cryptorandom_integer(lua_State *L)
     return 2;
 }
 
+/*
+** generate a random 'lua_Number'
+** 
+** note: 'NaN' or '+- inf' is NOT
+**       allowed as the generated value.
+*/
 static int lua_cryptorandom_number(lua_State *L)
 {
     LuaCryptoRandomNumber rnum;
@@ -182,7 +217,7 @@ static int lua_cryptorandom_number(lua_State *L)
 
     while (!had_error && is_nan_or_inf)
     {
-        if (lua_cryptorandom_bytes_impl(L, (unsigned char *)(rnum.buffer), sizeof(lua_Number), &err) == 0)
+        if (lua_cryptorandom_bytes_impl(L, (unsigned char *)(rnum.buffer), sizeof(lua_Number) * sizeof(unsigned char), &err) == 0)
         {
             lua_pushnil(L);
             lua_pushinteger(L, (lua_Integer)err);
@@ -201,8 +236,7 @@ static int lua_cryptorandom_number(lua_State *L)
 
 static int lua_cryptorandom_new_index(lua_State *L)
 {
-    luaL_error(L, "Read-only object");
-    return 0;
+    return luaL_error(L, "Read-only object");
 }
 
 static const luaL_Reg lua_cryptorandom_public_functions[] = {
@@ -224,6 +258,10 @@ LUA_CRYPTORANDOM_EXPORT int luaopen_cryptorandom(lua_State *L)
 #else
     luaL_setfuncs(L, lua_cryptorandom_public_functions, 0);
 #endif
+
+    lua_pushstring(L, "version");
+    lua_pushstring(L, LUA_CRYPTORANDOM_VERSION);
+    lua_settable(L, -3);
 
     lua_pushstring(L, "__index");
     lua_pushvalue(L, -2);

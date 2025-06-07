@@ -1,0 +1,84 @@
+name: Publish to LuaRocks
+
+on: workflow_dispatch
+
+env:
+  ROCKSPEC_VERSION: 0.0.6
+
+jobs:
+  upload-rockspec:
+    name: Upload rockspec
+    runs-on: ubuntu-latest
+    if: ${{ github.actor == 'luau-project' && github.triggering_actor == 'luau-project' && github.repository == 'luau-project/lua-cryptorandom' && github.ref_type == 'tag' }}
+
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+
+      - name: Validate tag, and set environment variable to hold the rockspec name
+        run: |
+          if ("${{ github.repository }}" -eq "luau-project/lua-cryptorandom" -and "${{ github.ref_name }}" -eq "v${{ env.ROCKSPEC_VERSION }}" -and "${{ github.ref }}" -eq "refs/tags/v${{ env.ROCKSPEC_VERSION }}")
+          {
+            Add-Content "${{ github.env }}" "ROCKSPEC=lua-cryptorandom-${{ env.ROCKSPEC_VERSION }}-1.rockspec";
+          }
+          else
+          {
+            $color = (0x1b -as [char]) + "[31m";
+
+            Write-Host "${color}Unexpected upload condition for the tag";
+            exit 1;
+          }
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: lua-cryptorandom
+          ref: ${{ github.ref }}
+
+      - name: Setup Lua
+        uses: luarocks/gh-actions-lua@master
+
+      - name: Setup LuaRocks
+        uses: luarocks/gh-actions-luarocks@master
+
+      - name: Make sure that tags from GitHub and rockspec are equal
+        run: |
+          $rockspec = Get-ChildItem . -Recurse -File |
+            Where-Object Name -EQ "${{ env.ROCKSPEC }}" |
+            Select-Object -ExpandProperty FullName -First 1;
+
+          $rockspec_tag = lua -e "dofile(arg[0]); io.write(source.tag);" -- "${rockspec}";
+          $github_tag = "${{ github.ref_name }}";
+
+          if ("${rockspec_tag}" -ne "${github_tag}")
+          {
+            $color_msg = (0x1b -as [char]) + "[31m";
+            $color_reset = (0x1b -as [char]) + "[0m";
+            $color_tag = (0x1b -as [char]) + "[33m";
+
+            Write-Host "${color_msg}Tag mismatch${color_reset}: GitHub tag (${color_tag}${github_tag}${color_reset}) != rockspec tag (${color_tag}${rockspec_tag}${color_reset})";
+            exit 1;
+          }
+
+      - name: Install LuaRocks dependencies to upload
+        run: |
+          sudo apt install -y libssl-dev;
+          luarocks install dkjson;
+          luarocks install luasocket;
+          luarocks install luasec;
+
+      - name: Upload rockspec to LuaRocks
+        working-directory: lua-cryptorandom
+        env:
+          UPLOAD_KEY: ${{ secrets.LUAROCKS_APIKEY }}
+        run: |
+          $rockspec = Get-ChildItem . -Recurse -File |
+              Where-Object Name -EQ "${{ env.ROCKSPEC }}" |
+              Select-Object -ExpandProperty FullName -First 1;
+
+          $color = (0x1b -as [char]) + "[36m";
+          Write-Host "Uploading rockspec: ${color}${rockspec}";
+
+          luarocks upload $rockspec "--temp-key=$env:UPLOAD_KEY" --skip-pack
