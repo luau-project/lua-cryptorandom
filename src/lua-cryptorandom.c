@@ -27,14 +27,22 @@
 #define isnan(x) (!((x)==(x)))
 #endif
 
-#ifndef isinf
+/*
+** On Lua 5.3 and newer, the Lua interpreter
+** can be built using the type 'lua_Number' as 'float'
+** or 'long double'. So, try to account for this
+** choice. The default configuration ('lua_Number' as 'double')
+** will try to use 'isinf' from <math.h> when the system
+** provided it.
+*/
 #if ((LUA_VERSION_NUM > 502) && (defined(LUA_FLOAT_TYPE)) && (defined(LUA_FLOAT_FLOAT)) && (LUA_FLOAT_TYPE == LUA_FLOAT_FLOAT) && defined(HUGE_VALF))
-#define isinf(x) ((x)==(HUGE_VALF)?(1):((x)==(-HUGE_VALF)?(-1):(0)))
+#define lua_cryptorandom_isinf(x) ((x)==(HUGE_VALF)?(1):((x)==(-HUGE_VALF)?(-1):(0)))
 #elif ((LUA_VERSION_NUM > 502) && (defined(LUA_FLOAT_TYPE)) && (defined(LUA_FLOAT_LONGDOUBLE)) && (LUA_FLOAT_TYPE == LUA_FLOAT_LONGDOUBLE) && defined(HUGE_VALL))
-#define isinf(x) ((x)==(HUGE_VALL)?(1):((x)==(-HUGE_VALL)?(-1):(0)))
+#define lua_cryptorandom_isinf(x) ((x)==(HUGE_VALL)?(1):((x)==(-HUGE_VALL)?(-1):(0)))
+#elif (defined(isinf)) /* on the usual configuration such that lua_Number is double, use isinf in case the system provides it */
+#define lua_cryptorandom_isinf isinf
 #else
-#define isinf(x) ((x)==(HUGE_VAL)?(1):((x)==(-HUGE_VAL)?(-1):(0)))
-#endif
+#define lua_cryptorandom_isinf(x) ((x)==(HUGE_VAL)?(1):((x)==(-HUGE_VAL)?(-1):(0)))
 #endif
 
 /*
@@ -228,7 +236,7 @@ static int lua_cryptorandom_number(lua_State *L)
             lua_pushinteger(L, (lua_Integer)err);
             had_error = 1;
         }
-        else if (!(isnan(rnum.value) || isinf(rnum.value)))
+        else if (!(isnan(rnum.value) || lua_cryptorandom_isinf(rnum.value)))
         {
             lua_pushnumber(L, rnum.value);
             lua_pushnil(L);
