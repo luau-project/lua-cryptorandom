@@ -17,7 +17,6 @@
 #include <openssl/err.h>
 #endif
 
-#include <stdlib.h>
 #include <math.h>
 
 #include <luaconf.h>
@@ -29,7 +28,13 @@
 #endif
 
 #ifndef isinf
+#if ((LUA_VERSION_NUM > 502) && (defined(LUA_FLOAT_TYPE)) && (defined(LUA_FLOAT_FLOAT)) && (LUA_FLOAT_TYPE == LUA_FLOAT_FLOAT) && defined(HUGE_VALF))
+#define isinf(x) ((x)==(HUGE_VALF)?(1):((x)==(-HUGE_VALF)?(-1):(0)))
+#elif ((LUA_VERSION_NUM > 502) && (defined(LUA_FLOAT_TYPE)) && (defined(LUA_FLOAT_LONGDOUBLE)) && (LUA_FLOAT_TYPE == LUA_FLOAT_LONGDOUBLE) && defined(HUGE_VALL))
+#define isinf(x) ((x)==(HUGE_VALL)?(1):((x)==(-HUGE_VALL)?(-1):(0)))
+#else
 #define isinf(x) ((x)==(HUGE_VAL)?(1):((x)==(-HUGE_VAL)?(-1):(0)))
+#endif
 #endif
 
 /*
