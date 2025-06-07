@@ -149,6 +149,7 @@ Many security operations rely on high-quality randomization services to avoid re
 
 * *Description*: The version of this library
 * *Signature*: ```version```
+    * *Return* (```string```): a string containing the version of this library (e.g.: `0.0.6`).
 * *Usage*:
 
     ```lua
