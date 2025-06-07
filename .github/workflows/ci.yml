@@ -432,6 +432,8 @@ jobs:
       - name: Configure LuaRocks
         run: |
           source /etc/makepkg_mingw.conf
+          echo "CC=/${{ matrix.MSYS2_CONFIG.sys }}/bin/${CC}" >> "${{ github.env }}"
+          echo "CFLAGS=${CFLAGS}" >> "${{ github.env }}"
           luarocks config lua_version "${{ matrix.Lua.version }}"
           luarocks config lua_dir "/${{ matrix.MSYS2_CONFIG.sys }}"
 
