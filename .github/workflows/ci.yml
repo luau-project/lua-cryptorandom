@@ -18,7 +18,9 @@ jobs:
 
   cplusplus-build:
     name: Build C++
-    runs-on: ubuntu-latest
+    runs-on:
+      - ubuntu-latest
+      - ubuntu-24.04-arm
 
     defaults:
       run:
@@ -31,7 +33,7 @@ jobs:
           - 5.1.5
           - 5.2.4
           - 5.3.6
-          - 5.4.7
+          - 5.4.8
 
         use-clang:
           - 'true'
@@ -153,7 +155,9 @@ jobs:
 
   clang-build:
     name: Clang Build
-    runs-on: ubuntu-latest
+    runs-on:
+      - ubuntu-latest
+      - ubuntu-24.04-arm
 
     defaults:
       run:
@@ -166,7 +170,7 @@ jobs:
           - 5.1.5
           - 5.2.4
           - 5.3.6
-          - 5.4.7
+          - 5.4.8
 
     steps:
 
@@ -280,8 +284,10 @@ jobs:
         shell: pwsh
 
     strategy:
-      matrix:
 
+      fail-fast: false
+
+      matrix:
         lua-version:
           - 5.1
           - 5.2
@@ -291,7 +297,9 @@ jobs:
 
         os:
           - windows-latest
+          - windows-11-arm
           - ubuntu-latest
+          - ubuntu-24.04-arm
           - macos-latest
 
         exclude:
@@ -317,11 +325,11 @@ jobs:
           path: lua-cryptorandom
 
       - name: Install libssl-dev
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+        if: ${{ runner.os == 'Linux' }}
         run: sudo apt install -y libssl-dev
 
       - name: Setup MSVC dev-prompt
-        if: ${{ matrix.os == 'windows-latest' && matrix.lua-version != 'luajit' }}
+        if: ${{ runner.os == 'Windows' && matrix.lua-version != 'luajit' }}
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: Setup Lua
@@ -384,7 +392,7 @@ jobs:
 
   msys2-build:
     name: MSYS2 Build
-    runs-on: windows-latest
+    runs-on: ${{ matrix.MSYS2_CONFIG.os }}
 
     defaults:
       run:
@@ -394,9 +402,10 @@ jobs:
       matrix:
 
         MSYS2_CONFIG:
-          - { sys: mingw64, env: x86_64 }
-          - { sys: ucrt64, env: ucrt-x86_64 }
-          - { sys: clang64, env: clang-x86_64 }
+          - { sys: mingw64, env: x86_64, os: windows-latest }
+          - { sys: ucrt64, env: ucrt-x86_64, os: windows-latest }
+          - { sys: clang64, env: clang-x86_64, os: windows-latest }
+          - { sys: clang64, env: clang-x86_64, os: windows-11-arm }
 
         Lua:
           - { version: '5.4', msys2-pkg-name: 'lua', msys2-lua-interpreter: 'lua' }
