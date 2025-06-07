@@ -18,9 +18,7 @@ jobs:
 
   cplusplus-build:
     name: Build C++
-    runs-on:
-      - ubuntu-latest
-      - ubuntu-24.04-arm
+    runs-on: ${{ matrix.os }}
 
     defaults:
       run:
@@ -28,6 +26,10 @@ jobs:
 
     strategy:
       matrix:
+
+        os:
+          - ubuntu-latest
+          - ubuntu-24.04-arm
 
         lua-version:
           - 5.1.5
@@ -155,9 +157,7 @@ jobs:
 
   clang-build:
     name: Clang Build
-    runs-on:
-      - ubuntu-latest
-      - ubuntu-24.04-arm
+    runs-on: ${{ matrix.os }}
 
     defaults:
       run:
@@ -165,6 +165,9 @@ jobs:
 
     strategy:
       matrix:
+        os:
+          - ubuntu-latest
+          - ubuntu-24.04-arm
 
         lua-version:
           - 5.1.5
@@ -336,6 +339,7 @@ jobs:
         uses: luarocks/gh-actions-lua@master
         with:
           luaVersion: ${{ matrix.lua-version }}
+          buildCache: false
 
       - name: Setup LuaRocks
         uses: luarocks/gh-actions-luarocks@master
@@ -405,7 +409,7 @@ jobs:
           - { sys: mingw64, env: x86_64, os: windows-latest }
           - { sys: ucrt64, env: ucrt-x86_64, os: windows-latest }
           - { sys: clang64, env: clang-x86_64, os: windows-latest }
-          - { sys: clang64, env: clang-x86_64, os: windows-11-arm }
+          - { sys: clangarm64, env: clang-aarch64, os: windows-11-arm }
 
         Lua:
           - { version: '5.4', msys2-pkg-name: 'lua', msys2-lua-interpreter: 'lua' }

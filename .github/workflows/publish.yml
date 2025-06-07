@@ -39,6 +39,8 @@ jobs:
 
       - name: Setup Lua
         uses: luarocks/gh-actions-lua@master
+        with:
+          buildCache: false
 
       - name: Setup LuaRocks
         uses: luarocks/gh-actions-luarocks@master
