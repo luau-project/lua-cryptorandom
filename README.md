@@ -1,18 +1,18 @@
 # lua-cryptorandom
 
-[![CI](https://github.com/luau-project/lua-cryptorandom/actions/workflows/ci.yml/badge.svg)](./.github/workflows/ci.yml) [![LuaRocks](https://img.shields.io/luarocks/v/luau-project/lua-cryptorandom?label=LuaRocks&color=2c3e67)](https://luarocks.org/modules/luau-project/lua-cryptorandom)
+[![LuaRocks](https://img.shields.io/luarocks/v/luau-project/lua-cryptorandom?label=LuaRocks&color=2c3e67)](https://luarocks.org/modules/luau-project/lua-cryptorandom) [![codecov](https://codecov.io/github/luau-project/lua-cryptorandom/graph/badge.svg?token=APX1MS9ZT9)](https://codecov.io/github/luau-project/lua-cryptorandom)
 
 ## Overview
 
 **lua-cryptorandom** is a lightweight, native library for Lua aimed to generate cryptographically secure pseudo random numbers, using trusted sources of randomness provided by the operating system.
 
 * On Unix-like distributions, it uses the [OpenSSL](https://www.openssl.org/) library to generate random numbers;
-* On Windows, it uses the WINAPI ```bcrypt``` library;
-* On macOS / iOS, it uses the ```CommonCrypto``` library.
+* On Windows, it uses the WINAPI `bcrypt` library;
+* On macOS / iOS, it uses the `CommonCrypto` library.
 
 > [!NOTE]
 > 
-> ```lua-cryptorandom``` is implemented in C, and also compiles as C++.
+> `lua-cryptorandom` is implemented in C, and also compiles as C++.
 
 ## Table of Contents
 
@@ -30,14 +30,15 @@
     * [number](#number)
     * [take](#take)
 * [Known limitations](#known-limitations)
-* [Change log](#change-log)
-* [Future works](#future-works)
+* [History](#history)
 
 ## Installation
 
 > [!IMPORTANT]
 > 
-> On Unix-like operating systems (e.g.: Linux, BSD),  ```lua-cryptorandom``` depends on the ```OpenSSL``` library:
+> On Windows and macOS, there is no need to install external libraries, because the toolchain already provides everything.
+> 
+> On Unix-like operating systems (e.g.: Linux, BSD), `lua-cryptorandom` depends on the `OpenSSL` library:
 >  * On Debian-based (e.g.: Ubuntu) distributions:
 > 
 >      ```bash
@@ -61,6 +62,11 @@ Assuming that [LuaRocks](https://luarocks.org) is properly installed and configu
 ```bash
 luarocks install lua-cryptorandom
 ```
+
+In case `LuaRocks` is not an option, check the guides:
+
+* [Build on Windows](./BUILDING-WINDOWS.md) or
+* [Build on Unix](./BUILDING-UNIX.md).
 
 ## Usage
 
@@ -148,8 +154,8 @@ Many security operations rely on high-quality randomization services to avoid re
 ### version
 
 * *Description*: The version of this library
-* *Signature*: ```version```
-    * *Return* (```string```): a string containing the version of this library (e.g.: `0.0.6`).
+* *Signature*: `version`
+    * *Return* (`string`): a string containing the version of this library (e.g.: `0.1.0`).
 * *Usage*:
 
     ```lua
@@ -163,17 +169,17 @@ Many security operations rely on high-quality randomization services to avoid re
 
 > [!IMPORTANT]
 > 
-> For each method below, always check whether the first returned value is ```nil``` or not. When the first value is ```nil```, there was an underlying error generating random values. It can fail because no trusted random source is available or the trusted entropy source temporarily fail to provide sufficient randomness material.
+> For each method below, always check whether the first returned value is `nil` or not. When the first value is `nil`, there was an underlying error generating random values. It can fail because no trusted random source is available or the trusted entropy source temporarily fail to provide sufficient randomness material.
 
 ### bytes
 
 * *Description*: Generates a sequence of random bytes
-* *Signature*: ```bytes(n)```
+* *Signature*: `bytes(n)`
     * *Parameters*:
         * *n*: the number of bytes to generate
-    * *Return*: ```table | nil``` as first value, and ```nil | number``` as the second.
-        * ```table | nil```: a table containing ```n``` bytes on success, or ```nil``` when an error occurred;
-        * ```nil | integer```: an error code that is set to ```nil``` on success, or an ```integer``` representing the code used by the underlying library (```OpenSSL``` on Unix, ```bcrypt``` on Windows and ```CommonCrypto``` library on macOS / iOS).
+    * *Return*: `table | nil` as first value, and `nil | number` as the second.
+        * `table | nil`: a table containing `n` bytes on success, or `nil` when an error occurred;
+        * `nil | integer`: an error code that is set to `nil` on success, or an `integer` representing the code used by the underlying library (`OpenSSL` on Unix, `bcrypt` on Windows and `CommonCrypto` library on macOS / iOS).
 * *Remark*: Here, a byte is meant as an integer in the range 0 - 255.
 * *Usage*:
 
@@ -200,10 +206,10 @@ Many security operations rely on high-quality randomization services to avoid re
 ### integer
 
 * *Description*: Generates a random integer
-* *Signature*: ```integer()```
-    * *Return*: ```integer | nil``` as first value, and ```nil | integer``` as the second.
-        * ```integer | nil```: the generated integer on success, or ```nil``` when an error occurred;
-        * ```nil | integer```: an error code that is set to ```nil``` on success, or an ```integer``` representing the code used by the underlying library (```OpenSSL``` on Unix, ```bcrypt``` on Windows and ```CommonCrypto``` library on macOS / iOS).
+* *Signature*: `integer()`
+    * *Return*: `integer | nil` as first value, and `nil | integer` as the second.
+        * `integer | nil`: the generated integer on success, or `nil` when an error occurred;
+        * `nil | integer`: an error code that is set to `nil` on success, or an `integer` representing the code used by the underlying library (`OpenSSL` on Unix, `bcrypt` on Windows and `CommonCrypto` library on macOS / iOS).
 * *Remark*: The generated integer can be any valid Lua integer, and such integer can span up to 64 bits. Use this function when you need a potentially large integer. For smaller integers, see [take](#take).
 * *Usage*:
 
@@ -222,11 +228,11 @@ Many security operations rely on high-quality randomization services to avoid re
 ### number
 
 * *Description*: Generates a random float number
-* *Signature*: ```number()```
-    * *Return*: ```number | nil``` as first value, and ```nil | integer``` as the second.
-        * ```number | nil```: the generated float number on success, or ```nil``` when an error occurred;
-        * ```nil | integer```: an error code that is set to ```nil``` on success, or an ```integer``` representing the code used by the underlying library (```OpenSSL``` on Unix, ```bcrypt``` on Windows and ```CommonCrypto``` library on macOS / iOS).
-* *Remark*: since v0.0.2, in case of success, the returned number is not ```NaN``` or positive/negative infinity values.
+* *Signature*: `number()`
+    * *Return*: `number | nil` as first value, and `nil | integer` as the second.
+        * `number | nil`: the generated float number on success, or `nil` when an error occurred;
+        * `nil | integer`: an error code that is set to `nil` on success, or an `integer` representing the code used by the underlying library (`OpenSSL` on Unix, `bcrypt` on Windows and `CommonCrypto` library on macOS / iOS).
+* *Remark*: since v0.0.2, in case of success, the returned number is not `NaN` or positive/negative infinity values.
 * *Usage*:
 
     ```lua
@@ -244,11 +250,11 @@ Many security operations rely on high-quality randomization services to avoid re
 ### take
 
 * *Description*: Generates a random integer that spans at least 16 bits in size, but usually 32 bits in these-days-computers.
-* *Signature*: ```take()```
-    * *Return*: ```integer | nil``` as first value, and ```nil | integer``` as the second.
-        * ```integer | nil```: the generated integer on success, or ```nil``` when an error occurred;
-        * ```nil | integer```: an error code that is set to ```nil``` on success, or an ```integer``` representing the code used by the underlying library (```OpenSSL``` on Unix, ```bcrypt``` on Windows and ```CommonCrypto``` library on macOS / iOS).
-* *Remark*: The generated integer has, at least, 16 bits in size, but it is usually a 32 bits integer in these-day-computers. The returned integer has the ```int``` data type in C. To generate potentially large integers, see [integer](#integer).
+* *Signature*: `take()`
+    * *Return*: `integer | nil` as first value, and `nil | integer` as the second.
+        * `integer | nil`: the generated integer on success, or `nil` when an error occurred;
+        * `nil | integer`: an error code that is set to `nil` on success, or an `integer` representing the code used by the underlying library (`OpenSSL` on Unix, `bcrypt` on Windows and `CommonCrypto` library on macOS / iOS).
+* *Remark*: The generated integer has, at least, 16 bits in size, but it is usually a 32 bits integer in these-day-computers. The returned integer has the `int` data type in C. To generate potentially large integers, see [integer](#integer).
 * *Usage*:
 
     ```lua
@@ -269,28 +275,8 @@ Many security operations rely on high-quality randomization services to avoid re
 > 
 > This section mostly applies to users running a customized build of Lua.
 
-* The error code (second return value) on each method might deliver a value different than the one returned by the underlying library. This condition might happen when the Lua type ```lua_Integer``` is shorter than an ```unsigned long``` in size. Even though it can be achieved on personalized builds of Lua (e.g.: Lua compiled as C89 on some platforms), the usual build of Lua should be safe for most users and platforms.
+* The error code (second return value) on each method might deliver a value different than the one returned by the underlying library. This condition might happen when the Lua type `lua_Integer` is shorter than an `unsigned long` in size. Even though it can be achieved on personalized builds of Lua (e.g.: Lua compiled as C89 on some platforms), the usual build of Lua should be safe for most users and platforms.
 
-## Change log
+## History
 
-* v0.0.6:
-    * Changed the dynamic memory allocator function provided by the system to use Lua's memory allocator function;
-    * In rare cases (systems such that `sizeof(unsigned char)` is not 1), the library will not use addresses out of ranges as it could happen in earlier versions;
-    * Added a field to inform the version of the library. See [version](#version) for more information;
-    * Upload of rockspec to LuaRocks website was split to live on its own workflow. This new [publish workflow](.github/workflows/publish.yml) must be run manually by the library's owner. Going this way, in case of intermitent upload failures (connection issues or temporarily unavailable services), the library's owner can run it later again without the need to run it locally on the owner's computer.
-* v0.0.5:
-    * On Apple platforms, moved from ```Security``` framework to ```CommonCrypto``` in order to use the ```builtin``` rockspec build type;
-    * Removed Makefile that was used to build on Apple operating systems.
-* v0.0.4:
-    * Added the possibility for all Unix-like distributions to build and install ```lua-cryptorandom``` using the binding for ```OpenSSL```;
-    * Added a CI job to build and test ```lua-cryptorandom``` on [Cygwin](https://www.cygwin.com/);
-    * Now, as a Unix-like distribution, Cygwin builds as a Unix distro. Thus, in order to build on Cygwin, you need to install the package ```libssl-devel```.
-* v0.0.3:
-    * Using unions on [take](#take) to avoid alignment issues;
-    * Added the [Usage](#usage) section on README.
-* v0.0.2: Prevent the generation of ```NaN``` and positive/negative infinity values in the function [number](#number).
-* v0.0.1: Initial release.
-
-## Future works
-
-* Add CMake as a build system.
+Browse the [CHANGELOG](./CHANGELOG.md)
