@@ -1,0 +1,55 @@
+# Build lua-cryptorandom on Unix
+
+This page details how to build and install `lua-cryptorandom` directly from the source code using `cmake`.
+
+## Table of Contents
+
+* [Prerequisites](#prerequisites)
+* [Build and Install](#build-and-install)
+
+## Prerequisites
+
+* Lua (&ge; 5.1) or LuaJIT must be installed in the system;
+
+* On macOS, there is no need to install any external libraries. On Linux, BSD and other Unix systems, use the package manager offered by the distribution to install the development package for OpenSSL.
+
+* CMake: since `v0.1.0`, it is possible to employ `cmake` to build `lua-cryptorandom` directly from the source code, out of `LuaRocks`. From now on, we are going to assume that `cmake` is installed in the system.
+
+> [!NOTE]
+> 
+> **Install CMake**: In order to use this method, the `cmake` tool is required.
+>
+> * On macOS, visit the website [https://cmake.org/](https://cmake.org/), download and install it;
+> * On Unix distributions, use the package manager of the system to install it.
+
+## Build and Install
+
+1. Download the latest source code of `lua-cryptorandom`, extract it and open a terminal in the `lua-cryptorandom` directory;
+
+2. Configure `lua-cryptorandom` for the Lua version installed:
+
+    ```bash
+    cmake --install-prefix /usr/local -DCMAKE_BUILD_TYPE=Release -B build
+    ```
+
+> [!TIP]
+> 
+> In case multiple Lua versions are installed in the system, use `-DLUA_VERSION=5.1`, ..., `-DLUA_VERSION=5.5` to select the appropriate version for PUC-Lua or `-DLUA_VERSION=luajit` for LuaJIT.
+
+3. Build `lua-cryptorandom`:
+
+    ```bash
+    cmake --build build --config Release
+    ```
+
+4. Test `lua-cryptorandom`:
+
+    ```bash
+    ctest --test-dir build -C Release
+    ```
+
+5. Install `lua-cryptorandom` (_super user privileges or **sudo** may be required for this step to work_):
+
+    ```bash
+    cmake --install build --config Release
+    ```
