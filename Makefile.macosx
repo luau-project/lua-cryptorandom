@@ -1,0 +1,76 @@
+#=========================================================================================#
+# LICENSE (MIT)                                                                           #
+#=========================================================================================#
+#                                                                                         #
+# The MIT License (MIT)                                                                   #
+#                                                                                         #
+# Copyright (c) 2025 - 2026 luau-project https://github.com/luau-project/lua-cryptorandom #
+#                                                                                         #
+# Permission is hereby granted, free of charge, to any person obtaining a copy            #
+# of this software and associated documentation files (the "Software"), to deal           #
+# in the Software without restriction, including without limitation the rights            #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell               #
+# copies of the Software, and to permit persons to whom the Software is                   #
+# furnished to do so, subject to the following conditions:                                #
+#                                                                                         #
+# The above copyright notice and this permission notice shall be included in all          #
+# copies or substantial portions of the Software.                                         #
+#                                                                                         #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR              #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,                #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE             #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER                  #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,           #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE           #
+# SOFTWARE.                                                                               #
+#                                                                                         #
+#=========================================================================================#
+
+# The intent of this Makefile
+# is to build and install `lua-cryptorandom`
+# easier on macOS.
+# For a feature-complete Makefile,
+# take a look at `Makefile.unix`.
+
+PREFIX = /usr/local
+CCDEFINES = -DLUA_CRYPTORANDOM_BUILD_SHARED -DLUA_CRYPTORANDOM_USE_APPLE
+CCPIC = -fPIC
+CCDEBINFO =
+CCSTD =
+CCOPT = -O2
+CCWARN = -Wall -Wextra
+CFLAGS = $(CCDEBINFO) $(CCSTD) $(CCPIC) $(CCOPT) $(CCWARN)
+CFLAGS_EXTRA =
+LDFLAGS_EXTRA =
+SOFLAGS = -bundle -undefined dynamic_lookup -all_load
+LUA_DIR = $(PREFIX)
+LUA_VERSION = 5.1
+LUA_INCDIR = $(LUA_DIR)/include
+LUA_LIBDIR = $(LUA_DIR)/lib
+INSTALL_PREFIX = $(PREFIX)
+INSTALL_LIBDIR = $(INSTALL_PREFIX)/lib/lua/$(LUA_VERSION)
+
+MAKEFILE_COMMON_FLAGS = -f Makefile.unix
+
+.PHONY: all
+all: lib
+
+.PHONY: lib
+lib:
+	$(MAKE) $(MAKEFILE_COMMON_FLAGS) "RANDOMLIB_INCDIR=$(LUA_INCDIR)" "CCDEFINES=$(CCDEFINES)" "CFLAGS_EXTRA=$(CFLAGS_EXTRA)" "SOFLAGS=$(SOFLAGS)" "LDFLAGS_EXTRA=$(LDFLAGS_EXTRA)" "LIBS=" lib
+
+.PHONY: install
+install:
+	$(MAKE) $(MAKEFILE_COMMON_FLAGS) "INSTALL_CMOD=$(INSTALL_LIBDIR)" install
+
+.PHONY: test
+test:
+	$(MAKE) $(MAKEFILE_COMMON_FLAGS) test
+
+.PHONY: clean
+clean:
+	$(MAKE) $(MAKEFILE_COMMON_FLAGS) clean
+
+.PHONY: very-clean
+very-clean:
+	$(MAKE) $(MAKEFILE_COMMON_FLAGS) very-clean

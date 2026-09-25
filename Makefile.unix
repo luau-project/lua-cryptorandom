@@ -1,0 +1,235 @@
+#=========================================================================================#
+# LICENSE (MIT)                                                                           #
+#=========================================================================================#
+#                                                                                         #
+# The MIT License (MIT)                                                                   #
+#                                                                                         #
+# Copyright (c) 2025 - 2026 luau-project https://github.com/luau-project/lua-cryptorandom #
+#                                                                                         #
+# Permission is hereby granted, free of charge, to any person obtaining a copy            #
+# of this software and associated documentation files (the "Software"), to deal           #
+# in the Software without restriction, including without limitation the rights            #
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell               #
+# copies of the Software, and to permit persons to whom the Software is                   #
+# furnished to do so, subject to the following conditions:                                #
+#                                                                                         #
+# The above copyright notice and this permission notice shall be included in all          #
+# copies or substantial portions of the Software.                                         #
+#                                                                                         #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR              #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,                #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE             #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER                  #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,           #
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE           #
+# SOFTWARE.                                                                               #
+#                                                                                         #
+#=========================================================================================#
+
+__EMPTY =
+DIRSEP = /$(__EMPTY)
+OBJEXT = .o
+LIBEXT = .so
+OPENARGDELIMITER = "
+CLOSEARGDELIMITER = $(OPENARGDELIMITER)
+
+PREFIX = $(DIRSEP)usr$(DIRSEP)local
+MULTILIB = lib
+
+RANDOMLIB_DIR = $(PREFIX)
+RANDOMLIB_INCDIR = $(RANDOMLIB_DIR)$(DIRSEP)include
+RANDOMLIB_LIBDIR = $(RANDOMLIB_DIR)$(DIRSEP)$(MULTILIB)
+RANDOMLIB_LIBNAME = crypto
+RANDOMLIB_LIBEXT =
+RANDOMLIB_LIB = $(RANDOMLIB_LIBNAME)$(RANDOMLIB_LIBEXT)
+
+LUA_DIR = $(PREFIX)
+LUA = lua
+LUA_VERSION = 5.1
+LUA_INCSUBDIR = include
+LUA_INCDIR = $(LUA_DIR)$(DIRSEP)$(LUA_INCSUBDIR)
+LUA_LIBDIR = $(LUA_DIR)$(DIRSEP)$(MULTILIB)
+INSTALL_CMODSUBDIR = lua$(DIRSEP)$(LUA_VERSION)
+INSTALL_CMOD = $(LUA_LIBDIR)$(DIRSEP)$(INSTALL_CMODSUBDIR)
+
+PACKAGE_NAME = lua-cryptorandom
+PACKAGE_VERSION = 0.1.0
+PACKAGE_REVISION = 1
+PACKAGE_REPOSITORY_URL = https://github.com/luau-project/$(PACKAGE_NAME)
+PACKAGE_SOURCE_URL = git+$(PACKAGE_REPOSITORY_URL).git
+PACKAGE_DEV_BRANCH = master
+PACKAGE_HOMEPAGE_URL = $(PACKAGE_REPOSITORY_URL)
+ROCKSPEC_EXT = .rockspec
+ROCKSPEC_DIR = rockspecs
+ROCKSPEC_TEMPLATE = $(ROCKSPEC_DIR)$(DIRSEP)rockspec.in
+DEV_ROCKSPEC_VERSION = dev
+DEV_ROCKSPEC_REVISION = 1
+DEV_ROCKSPEC = $(ROCKSPEC_DIR)$(DIRSEP)$(PACKAGE_NAME)-$(DEV_ROCKSPEC_VERSION)-$(DEV_ROCKSPEC_REVISION)$(ROCKSPEC_EXT)
+VERSIONED_ROCKSPEC = $(ROCKSPEC_DIR)$(DIRSEP)$(PACKAGE_NAME)-$(PACKAGE_VERSION)-$(PACKAGE_REVISION)$(ROCKSPEC_EXT)
+
+OUTBASENAME = $(PACKAGE_NAME)$(LIBEXT)
+OUT = $(OUTBASENAME)
+SRCDIR = src
+LUA_CRYPTORANDOM_OBJ = $(SRCDIR)$(DIRSEP)$(PACKAGE_NAME)$(OBJEXT)
+LUA_CRYPTORANDOM_SRC = $(SRCDIR)$(DIRSEP)$(PACKAGE_NAME).c
+OBJ = $(LUA_CRYPTORANDOM_OBJ)
+SRC = $(LUA_CRYPTORANDOM_SRC)
+
+SAMPLESDIR = samples
+SAMPLES_BYTES = $(SAMPLESDIR)$(DIRSEP)bytes.lua
+SAMPLES_INTEGER = $(SAMPLESDIR)$(DIRSEP)integer.lua
+SAMPLES_NUMBER = $(SAMPLESDIR)$(DIRSEP)number.lua
+SAMPLES_READONLY = $(SAMPLESDIR)$(DIRSEP)readonly.lua
+SAMPLES_TAKE = $(SAMPLESDIR)$(DIRSEP)take.lua
+SAMPLES_VERSION = $(SAMPLESDIR)$(DIRSEP)version.lua
+
+CC = cc
+CCONLY = -c
+CCPIC = -fPIC
+CCDEBINFO =
+CCSTD =
+CCOPT = -O2
+CCWARN = -Wall -Wextra
+CFLAGS = $(CCDEBINFO) $(CCSTD) $(CCPIC) $(CCOPT) $(CCWARN)
+CFLAGS_EXTRA =
+CCDEFINEFLAG = -D
+CCINCFLAG = -I
+CCOUT = -o $(__EMPTY)
+
+CCSHAREDDEFINE = $(CCDEFINEFLAG)LUA_CRYPTORANDOM_BUILD_SHARED
+CCWIN32DEFINE = $(CCDEFINEFLAG)LUA_CRYPTORANDOM_USE_WIN32
+CCOPENSSLDEFINE = $(CCDEFINEFLAG)LUA_CRYPTORANDOM_USE_OPENSSL
+CCAPPLEDEFINE = $(CCDEFINEFLAG)LUA_CRYPTORANDOM_USE_APPLE
+CCLIBDEFINE = $(CCOPENSSLDEFINE)
+
+CCDEFINES = $(CCSHAREDDEFINE) $(CCLIBDEFINE)
+CCINCLUDES = $(CCINCFLAG)$(OPENARGDELIMITER)$(RANDOMLIB_INCDIR)$(CLOSEARGDELIMITER) $(CCINCFLAG)$(OPENARGDELIMITER)$(LUA_INCDIR)$(CLOSEARGDELIMITER) $(CCINCFLAG)$(SRCDIR)
+
+LD = $(CC)
+SOFLAGS = -shared
+LDFLAGS =
+LDFLAGS_EXTRA =
+LDLIBDIRFLAG = -L
+LDLIBFLAG = -l
+LDOUT = $(CCOUT)
+LIBS = $(LDLIBDIRFLAG)$(OPENARGDELIMITER)$(RANDOMLIB_LIBDIR)$(CLOSEARGDELIMITER) $(LDLIBFLAG)$(RANDOMLIB_LIB)
+
+APPLE_SOFLAGS = -bundle -undefined dynamic_lookup -all_load
+
+LUAROCKS = luarocks
+LUAROCKS_LINT_ARGS =
+LUAROCKS_MAKE_ARGS =
+LUAROCKS_REMOVE_ARGS =
+
+REDIRTOSTDOUT = >
+
+SED = sed
+SEDEFLAG = -e
+
+ECHO = echo
+
+RM = rm
+RMFLAGS = -f
+
+MKDIR = mkdir
+MKDIRFLAGS = -p
+
+INSTALL = install
+INSTALLPFLAG = -p
+INSTALLEXEFLAGS = -m 0755
+INSTALLFLAGS = $(INSTALLPFLAG) $(INSTALLEXEFLAGS)
+
+all: lib
+
+lib: $(OUT)
+
+$(OUT): $(OBJ)
+	$(LD) $(SOFLAGS) $(LDFLAGS) $(LDFLAGS_EXTRA) $(LDOUT)$(OUT) $(OBJ) $(LIBS)
+
+$(LUA_CRYPTORANDOM_OBJ): $(LUA_CRYPTORANDOM_SRC)
+	$(CC) $(CCONLY) $(CFLAGS) $(CFLAGS_EXTRA) $(CCDEFINES) $(CCINCLUDES) $(CCOUT)$(LUA_CRYPTORANDOM_OBJ) $(LUA_CRYPTORANDOM_SRC)
+
+create-install-dir:
+	-$(MKDIR) $(MKDIRFLAGS) $(OPENARGDELIMITER)$(INSTALL_CMOD)$(CLOSEARGDELIMITER)
+
+install: create-install-dir
+	$(INSTALL) $(INSTALLFLAGS) $(OUT) $(OPENARGDELIMITER)$(INSTALL_CMOD)$(CLOSEARGDELIMITER)
+
+uninstall:
+	-$(RM) $(RMFLAGS) $(OPENARGDELIMITER)$(INSTALL_CMOD)$(DIRSEP)$(OUTBASENAME)$(CLOSEARGDELIMITER)
+
+test: test-bytes test-integer test-number test-readonly test-take test-version
+
+test-bytes: $(SAMPLES_BYTES)
+	$(LUA) $(SAMPLES_BYTES)
+
+test-integer: $(SAMPLES_INTEGER)
+	$(LUA) $(SAMPLES_INTEGER)
+
+test-number: $(SAMPLES_NUMBER)
+	$(LUA) $(SAMPLES_NUMBER)
+
+test-readonly: $(SAMPLES_READONLY)
+	$(LUA) $(SAMPLES_READONLY)
+
+test-take: $(SAMPLES_TAKE)
+	$(LUA) $(SAMPLES_TAKE)
+
+test-version: $(SAMPLES_VERSION)
+	$(LUA) $(SAMPLES_VERSION)
+
+luarocks-install-dev: $(DEV_ROCKSPEC)
+	$(LUAROCKS) make $(LUAROCKS_MAKE_ARGS) $(DEV_ROCKSPEC)
+
+luarocks-install: $(VERSIONED_ROCKSPEC)
+	$(LUAROCKS) make $(LUAROCKS_MAKE_ARGS) $(VERSIONED_ROCKSPEC)
+
+luarocks-uninstall-dev:
+	$(LUAROCKS) remove $(LUAROCKS_REMOVE_ARGS) $(DEV_ROCKSPEC)
+
+luarocks-uninstall:
+	$(LUAROCKS) remove $(LUAROCKS_REMOVE_ARGS) $(VERSIONED_ROCKSPEC)
+
+lint-rockspecs: lint-dev-rockspec lint-rockspec
+
+lint-dev-rockspec: $(DEV_ROCKSPEC)
+	$(LUAROCKS) lint $(LUAROCKS_LINT_ARGS) $(DEV_ROCKSPEC)
+
+lint-rockspec: $(VERSIONED_ROCKSPEC)
+	$(LUAROCKS) lint $(LUAROCKS_LINT_ARGS) $(VERSIONED_ROCKSPEC)
+
+create-rockspecs: create-dev-rockspec create-rockspec
+
+create-dev-rockspec: $(DEV_ROCKSPEC)
+
+create-rockspec: $(VERSIONED_ROCKSPEC)
+
+echo-rockspec:
+	@$(ECHO) $(VERSIONED_ROCKSPEC)
+
+echo-dev-rockspec:
+	@$(ECHO) $(DEV_ROCKSPEC)
+
+$(DEV_ROCKSPEC): $(ROCKSPEC_TEMPLATE)
+	$(SED) $(SEDEFLAG) $(OPENARGDELIMITER)s|@PACKAGE_NAME@|$(PACKAGE_NAME)|g$(CLOSEARGDELIMITER) $(SEDEFLAG) $(OPENARGDELIMITER)s|@PACKAGE_VERSION@|$(DEV_ROCKSPEC_VERSION)|g$(CLOSEARGDELIMITER) $(SEDEFLAG) $(OPENARGDELIMITER)s|@PACKAGE_REVISION@|$(DEV_ROCKSPEC_REVISION)|g$(CLOSEARGDELIMITER) $(SEDEFLAG) $(OPENARGDELIMITER)s|@PACKAGE_REPOSITORY_URL@|$(PACKAGE_REPOSITORY_URL)|g$(CLOSEARGDELIMITER) $(SEDEFLAG) $(OPENARGDELIMITER)s|@PACKAGE_SOURCE_URL@|$(PACKAGE_SOURCE_URL)|g$(CLOSEARGDELIMITER) $(SEDEFLAG) $(OPENARGDELIMITER)s|@PACKAGE_DEV_BRANCH@|$(PACKAGE_DEV_BRANCH)|g$(CLOSEARGDELIMITER) $(SEDEFLAG) $(OPENARGDELIMITER)s|@PACKAGE_HOMEPAGE_URL@|$(PACKAGE_HOMEPAGE_URL)|g$(CLOSEARGDELIMITER) $(ROCKSPEC_TEMPLATE)$(REDIRTOSTDOUT) $(DEV_ROCKSPEC)
+
+$(VERSIONED_ROCKSPEC): $(ROCKSPEC_TEMPLATE)
+	$(SED) $(SEDEFLAG) $(OPENARGDELIMITER)s|@PACKAGE_NAME@|$(PACKAGE_NAME)|g$(CLOSEARGDELIMITER) $(SEDEFLAG) $(OPENARGDELIMITER)s|@PACKAGE_VERSION@|$(PACKAGE_VERSION)|g$(CLOSEARGDELIMITER) $(SEDEFLAG) $(OPENARGDELIMITER)s|@PACKAGE_REVISION@|$(PACKAGE_REVISION)|g$(CLOSEARGDELIMITER) $(SEDEFLAG) $(OPENARGDELIMITER)s|@PACKAGE_REPOSITORY_URL@|$(PACKAGE_REPOSITORY_URL)|g$(CLOSEARGDELIMITER) $(SEDEFLAG) $(OPENARGDELIMITER)s|@PACKAGE_SOURCE_URL@|$(PACKAGE_SOURCE_URL)|g$(CLOSEARGDELIMITER) $(SEDEFLAG) $(OPENARGDELIMITER)s|@PACKAGE_DEV_BRANCH@|$(PACKAGE_DEV_BRANCH)|g$(CLOSEARGDELIMITER) $(SEDEFLAG) $(OPENARGDELIMITER)s|@PACKAGE_HOMEPAGE_URL@|$(PACKAGE_HOMEPAGE_URL)|g$(CLOSEARGDELIMITER) $(ROCKSPEC_TEMPLATE)$(REDIRTOSTDOUT) $(VERSIONED_ROCKSPEC)
+
+clean-$(LUA_CRYPTORANDOM_OBJ):
+	-$(RM) $(RMFLAGS) $(LUA_CRYPTORANDOM_OBJ)
+
+clean-obj: clean-$(LUA_CRYPTORANDOM_OBJ)
+
+clean-out:
+	-$(RM) $(RMFLAGS) $(OUT)
+
+clean-dev-rockspec:
+	-$(RM) $(RMFLAGS) $(DEV_ROCKSPEC)
+
+clean-rockspec:
+	-$(RM) $(RMFLAGS) $(VERSIONED_ROCKSPEC)
+
+clean: clean-obj clean-out
+
+very-clean: clean clean-dev-rockspec clean-rockspec
