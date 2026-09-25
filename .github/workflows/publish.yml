@@ -1,86 +1,275 @@
-name: Publish to LuaRocks
+name: Publish
 
-on: workflow_dispatch
+#
+# Read the document (`RELEASES.md`)
+# to perform all the steps required
+# to run this workflow.
+#
 
-env:
-  ROCKSPEC_VERSION: 0.0.6
+on:
+  workflow_dispatch:
+    inputs:
+      skip-luarocks-upload:
+        description: Skip upload to LuaRocks website
+        type: boolean
+        required: true
+        default: false
+      skip-github-release:
+        description: Skip releasing to GitHub Releases
+        type: boolean
+        required: true
+        default: false
 
 jobs:
-  upload-rockspec:
-    name: Upload rockspec
+  # Job to extract the library version
+  # stored in the LUA_CRYPTORANDOM_VERSION macro
+  # on `src/lua-cryptorandom.h` file.
+  #
+  # Remark: this job stores `none`
+  # as version output on failure.
+  get-version-from-library:
+    name: Get the library version
     runs-on: ubuntu-latest
-    if: ${{ github.actor == 'luau-project' && github.triggering_actor == 'luau-project' && github.repository == 'luau-project/lua-cryptorandom' && github.ref_type == 'tag' }}
+    permissions: read-all
 
-    defaults:
-      run:
-        shell: pwsh
+    outputs:
+      version: ${{ steps.version.outputs.version }}
 
     steps:
 
-      - name: Validate tag, and set environment variable to hold the rockspec name
-        run: |
-          if ("${{ github.repository }}" -eq "luau-project/lua-cryptorandom" -and "${{ github.ref_name }}" -eq "v${{ env.ROCKSPEC_VERSION }}" -and "${{ github.ref }}" -eq "refs/tags/v${{ env.ROCKSPEC_VERSION }}")
-          {
-            Add-Content "${{ github.env }}" "ROCKSPEC=lua-cryptorandom-${{ env.ROCKSPEC_VERSION }}-1.rockspec";
-          }
-          else
-          {
-            $color = (0x1b -as [char]) + "[31m";
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.ref }}
+          persist-credentials: false
 
-            Write-Host "${color}Unexpected upload condition for the tag";
-            exit 1;
-          }
+      - name: Get version from the library defined at `src/lua-cryptorandom.h`
+        id: version
+        run: |
+          pattern="[0-9]+(\\.[0-9]+)+"
+          version_major=$(grep -oP "#define\\s+LUA_CRYPTORANDOM_VERSION_MAJOR\\s+\"([0-9]+)\"" src/lua-cryptorandom.h | grep -oP "[0-9]+")
+          version_minor=$(grep -oP "#define\\s+LUA_CRYPTORANDOM_VERSION_MINOR\\s+\"([0-9]+)\"" src/lua-cryptorandom.h | grep -oP "[0-9]+")
+          version_patch=$(grep -oP "#define\\s+LUA_CRYPTORANDOM_VERSION_PATCH\\s+\"([0-9]+)\"" src/lua-cryptorandom.h | grep -oP "[0-9]+")
+          version="${version_major}.${version_minor}.${version_patch}"
+          if [[ $version =~ ^$pattern$ ]]; then
+            echo "version=${version}" >> "${GITHUB_OUTPUT}"
+          else
+            echo "version=none" >> "${GITHUB_OUTPUT}"
+          fi
+
+  # Job to get the latest
+  # versioned rockspec
+  # tracked by git
+  # on rockspec folder.
+  #
+  # Remark: this job stores `none`
+  # as rockspec output on failure.
+  get-latest-rockspec:
+    name: Get the latest rockspec
+    runs-on: ubuntu-latest
+    permissions: read-all
+
+    outputs:
+      rockspec: ${{ steps.rockspec.outputs.rockspec }}
+
+    steps:
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          path: lua-cryptorandom
+          ref: ${{ github.ref }}
+          persist-credentials: false
+
+      - name: Get the latest rockspec sorted by version in the name
+        id: rockspec
+        run: |
+          dev_pattern="lua-cryptorandom-(dev|scm|cvs|git|svn|hg)-[0-9]+\\.rockspec"
+          latest=""
+          for rockspec in $(git ls-files "rockspecs/lua-cryptorandom-*.rockspec" | sort --version-sort); do
+            rockspec_basename="$(basename "$rockspec")"
+
+            if ! [[ $rockspec_basename =~ ^$dev_pattern$ ]]; then
+              latest="${rockspec}"
+            fi
+          done
+
+          if test -f "${latest}"; then
+            echo "rockspec=${latest}" >> "${GITHUB_OUTPUT}"
+          else
+            echo "rockspec=none" >> "${GITHUB_OUTPUT}"
+          fi
+
+  # Job to extract the version
+  # from the tag.
+  # For instance, for a `v0.0.1`
+  # tag, this job stores `0.0.1`
+  # as version output.
+  #
+  # Remark: this job stores `none`
+  # as version output on failure.
+  get-version-from-tag:
+    name: Get version from the tag
+    runs-on: ubuntu-latest
+    permissions: read-all
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+
+      - name: Extract version from the tag
+        id: version
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            pattern="[0-9]+(\\.[0-9]+)+"
+            version=$(echo "${GITHUB_REF_NAME}" | sed -e "s|v||g" | grep -oP "^$pattern\$")
+
+            if [[ $version =~ ^$pattern$ ]]; then
+              echo "version=${version}" >> "${GITHUB_OUTPUT}"
+            else
+              echo "version=none" >> "${GITHUB_OUTPUT}"
+            fi
+          else
+            echo "version=none" >> "${GITHUB_OUTPUT}"
+          fi
+
+  # Job to perform validation
+  # between different versions:
+  #
+  # i)   from the `src/lua-cryptorandom.h` file;
+  # ii)  from the latest rockspec name;
+  # iii) from the `source.tag` field
+  #      in the latest rockspec.
+  match-versions:
+    name: Match versions from lib, rockspec and tag
+    runs-on: ubuntu-latest
+    permissions: read-all
+    needs:
+      - get-version-from-library
+      - get-latest-rockspec
+      - get-version-from-tag
+    if: |
+      ${{
+        needs.get-version-from-library.outputs.version != 'none' &&
+        needs.get-latest-rockspec.outputs.rockspec != 'none' &&
+        needs.get-version-from-tag.outputs.version != 'none' &&
+        needs.get-version-from-library.outputs.version == needs.get-version-from-tag.outputs.version
+      }}
+
+    env:
+      ROCKSPEC: ${{ needs.get-latest-rockspec.outputs.rockspec }}
+      LIBVERSION: ${{ needs.get-version-from-library.outputs.version }}
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.ref }}
+          persist-credentials: false
+
+      - name: Setup Lua and LuaRocks
+        uses: luau-project/setup-lua@ebdc724769a3976b27abe70d93a730aede440ba9 # v2.0.8
+
+      - name: Validate rockspec basename
+        run: |
+          rockspec_basename="$(basename "${ROCKSPEC}")"
+          rockspec_basename_version=$(echo "${rockspec_basename}" | rev | cut -d- -f2 | rev)
+          if [ "${rockspec_basename_version}" != "${LIBVERSION}" ]; then
+            echo "version in the basename of the latest rockspec (${rockspec_basename_version}) is not ${LIBVERSION}";
+            exit 1;
+          fi
+
+      - name: Validate rockspec tag
+        run: |
+          rockspec_tag=$(lua -e "dofile(arg[0]); io.write(source.tag);" -- "${ROCKSPEC}")
+          if [ "${rockspec_tag}" != "${GITHUB_REF_NAME}" ]; then
+            echo "source.tag (${rockspec_tag}) is not ${GITHUB_REF_NAME}";
+            exit 1;
+          fi
+
+  publish:
+    name: Publish to LuaRocks and GitHub Releases
+    runs-on: ubuntu-latest
+    needs:
+      - get-latest-rockspec
+      - get-version-from-tag
+      - match-versions
+    if: |
+      ${{
+        github.repository == 'luau-project/lua-cryptorandom' &&
+        github.ref_type == 'tag'
+      }}
+    permissions:
+      contents: write
+
+    env:
+      ROCKSPEC: ${{ needs.get-latest-rockspec.outputs.rockspec }}
+      TAGVERSION: ${{ needs.get-version-from-tag.outputs.version }}
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
           ref: ${{ github.ref }}
 
-      - name: Setup Lua
-        uses: luarocks/gh-actions-lua@master
-        with:
-          buildCache: false
+      - name: Setup Lua and LuaRocks
+        uses: luau-project/setup-lua@ebdc724769a3976b27abe70d93a730aede440ba9 # v2.0.8
 
-      - name: Setup LuaRocks
-        uses: luarocks/gh-actions-luarocks@master
+      - name: Install system dependencies
+        run: sudo apt install -y libssl-dev
 
-      - name: Make sure that tags from GitHub and rockspec are equal
+      - name: Install upload dependency (LuaSocket)
+        run: luarocks install luasocket
+
+      - name: Install upload dependency (LuaSec)
+        run: luarocks install luasec
+
+      - name: Install upload dependency (dkjson)
+        run: luarocks install dkjson
+
+      - name: Pack a src rock and set an environment variable to hold its name
         run: |
-          $rockspec = Get-ChildItem . -Recurse -File |
-            Where-Object Name -EQ "${{ env.ROCKSPEC }}" |
-            Select-Object -ExpandProperty FullName -First 1;
-
-          $rockspec_tag = lua -e "dofile(arg[0]); io.write(source.tag);" -- "${rockspec}";
-          $github_tag = "${{ github.ref_name }}";
-
-          if ("${rockspec_tag}" -ne "${github_tag}")
-          {
-            $color_msg = (0x1b -as [char]) + "[31m";
-            $color_reset = (0x1b -as [char]) + "[0m";
-            $color_tag = (0x1b -as [char]) + "[33m";
-
-            Write-Host "${color_msg}Tag mismatch${color_reset}: GitHub tag (${color_tag}${github_tag}${color_reset}) != rockspec tag (${color_tag}${rockspec_tag}${color_reset})";
-            exit 1;
+          rockspec_basename="$(basename "${ROCKSPEC}")"
+          srcrock="${rockspec_basename%.*}.src.rock"
+          luarocks pack "${ROCKSPEC}" || {
+            echo "Failed to pack a .src.rock from ${ROCKSPEC}"
+            exit 1
           }
 
-      - name: Install LuaRocks dependencies to upload
-        run: |
-          sudo apt install -y libssl-dev;
-          luarocks install dkjson;
-          luarocks install luasocket;
-          luarocks install luasec;
+          echo "SRC_ROCK=${srcrock}" >> "$GITHUB_ENV"
 
-      - name: Upload rockspec to LuaRocks
-        working-directory: lua-cryptorandom
+      - name: Generate a versioned tarball from the tag
+        run: |
+          git archive \
+            "--format=tar.gz" \
+            -o "lua-cryptorandom-${TAGVERSION}.tar.gz" \
+            "--prefix=lua-cryptorandom-${TAGVERSION}/" \
+            "${GITHUB_REF}"
+
+      - name: Generate a versioned zip from the tag
+        run: |
+          git archive \
+            "--format=zip" \
+            -o "lua-cryptorandom-${TAGVERSION}.zip" \
+            "--prefix=lua-cryptorandom-${TAGVERSION}/" \
+            "${GITHUB_REF}"
+
+      - name: Publish to LuaRocks
+        if: inputs.skip-luarocks-upload != 'true'
         env:
           UPLOAD_KEY: ${{ secrets.LUAROCKS_APIKEY }}
+        run: luarocks upload "${ROCKSPEC}" "--temp-key=${UPLOAD_KEY}"
+
+      - name: Publish to GitHub Releases
+        if: inputs.skip-github-release != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          $rockspec = Get-ChildItem . -Recurse -File |
-              Where-Object Name -EQ "${{ env.ROCKSPEC }}" |
-              Select-Object -ExpandProperty FullName -First 1;
-
-          $color = (0x1b -as [char]) + "[36m";
-          Write-Host "Uploading rockspec: ${color}${rockspec}";
-
-          luarocks upload $rockspec "--temp-key=$env:UPLOAD_KEY" --skip-pack
+          gh release create "${GITHUB_REF_NAME}" \
+            --generate-notes \
+            "lua-cryptorandom-${TAGVERSION}.tar.gz" \
+            "lua-cryptorandom-${TAGVERSION}.zip" \
+            "${ROCKSPEC}" \
+            "${SRC_ROCK}"
