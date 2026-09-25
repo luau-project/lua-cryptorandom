@@ -4,35 +4,35 @@
 #include <lua.h>
 
 #define LUA_CRYPTORANDOM_VERSION_MAJOR "0"
-#define LUA_CRYPTORANDOM_VERSION_MINOR "0"
-#define LUA_CRYPTORANDOM_VERSION_PATCH "6"
+#define LUA_CRYPTORANDOM_VERSION_MINOR "1"
+#define LUA_CRYPTORANDOM_VERSION_PATCH "0"
 #define LUA_CRYPTORANDOM_VERSION LUA_CRYPTORANDOM_VERSION_MAJOR "." LUA_CRYPTORANDOM_VERSION_MINOR "." LUA_CRYPTORANDOM_VERSION_PATCH
 
 #ifndef LUA_CRYPTORANDOM_EXPORT
 #ifdef LUA_CRYPTORANDOM_BUILD_STATIC
 #define LUA_CRYPTORANDOM_EXPORT
 #else
-#ifdef LUA_CRYPTORANDOM_BUILD_SHARED /* { */
-#if defined(_WIN32) /* { */
-#if defined(__GNUC__) || defined(__MINGW32__) /* { */
+#ifdef LUA_CRYPTORANDOM_BUILD_SHARED
+#if defined(_WIN32) || defined(_WIN64)
+#if defined(__GNUC__) || defined(__MINGW32__)
 #define LUA_CRYPTORANDOM_EXPORT __attribute__((dllexport))
-#else /* }{ */
+#else
 #define LUA_CRYPTORANDOM_EXPORT __declspec(dllexport)
-#endif /* } */
-#else /* }{ */
+#endif
+#else
 #define LUA_CRYPTORANDOM_EXPORT __attribute__((visibility("default")))
-#endif /* } */
-#else /* }{ */
-#if defined(_WIN32) /* { */
-#if defined(__GNUC__) || defined(__MINGW32__) /* { */
+#endif
+#else
+#if defined(_WIN32) || defined(_WIN64)
+#if defined(__GNUC__) || defined(__MINGW32__)
 #define LUA_CRYPTORANDOM_EXPORT __attribute__((dllimport))
-#else /* }{ */
+#else
 #define LUA_CRYPTORANDOM_EXPORT __declspec(dllimport)
-#endif /* } */
-#else /* }{ */
+#endif
+#else
 #define LUA_CRYPTORANDOM_EXPORT
-#endif /* } */
-#endif /* } */
+#endif
+#endif
 #endif
 #endif
 

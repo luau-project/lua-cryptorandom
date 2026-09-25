@@ -81,7 +81,7 @@ typedef union tagLuaCryptoRandomNumber
 #define LUA_CRYPTORANDOM_METATABLE "lua_cryptorandom_metatable"
 
 /*  Implementation to generate cryptographically secure pseudo random bytes */
-static int lua_cryptorandom_bytes_impl(lua_State *L, unsigned char *buffer, int len, unsigned long *err)
+static int lua_cryptorandom_bytes_impl(unsigned char *buffer, int len, unsigned long *err)
 {
     int result = 1;
 #ifdef LUA_CRYPTORANDOM_USE_WIN32
@@ -147,7 +147,7 @@ static int lua_cryptorandom_bytes(lua_State *L)
         luaL_error(L, "Memory allocation failed");
     }
 
-    if (lua_cryptorandom_bytes_impl(L, buffer, ((int)buffer_size), &err) == 0)
+    if (lua_cryptorandom_bytes_impl(buffer, ((int)buffer_size), &err) == 0)
     {
         lua_pushnil(L);
         lua_pushinteger(L, (lua_Integer)err);
@@ -178,7 +178,7 @@ static int lua_cryptorandom_take(lua_State *L)
     LuaCryptoRandomInt rtake;
 
     unsigned long err;
-    if (lua_cryptorandom_bytes_impl(L, (unsigned char *)(rtake.buffer), sizeof(int) * sizeof(unsigned char), &err) == 0)
+    if (lua_cryptorandom_bytes_impl((unsigned char *)(rtake.buffer), sizeof(int) * sizeof(unsigned char), &err) == 0)
     {
         lua_pushnil(L);
         lua_pushinteger(L, (lua_Integer)err);
@@ -200,7 +200,7 @@ static int lua_cryptorandom_integer(lua_State *L)
     LuaCryptoRandomInteger rint;
 
     unsigned long err;
-    if (lua_cryptorandom_bytes_impl(L, (unsigned char *)(rint.buffer), sizeof(lua_Integer) * sizeof(unsigned char), &err) == 0)
+    if (lua_cryptorandom_bytes_impl((unsigned char *)(rint.buffer), sizeof(lua_Integer) * sizeof(unsigned char), &err) == 0)
     {
         lua_pushnil(L);
         lua_pushinteger(L, (lua_Integer)err);
@@ -216,7 +216,7 @@ static int lua_cryptorandom_integer(lua_State *L)
 
 /*
 ** generate a random 'lua_Number'
-** 
+**
 ** note: 'NaN' or '+- inf' is NOT
 **       allowed as the generated value.
 */
@@ -230,7 +230,7 @@ static int lua_cryptorandom_number(lua_State *L)
 
     while (!had_error && is_nan_or_inf)
     {
-        if (lua_cryptorandom_bytes_impl(L, (unsigned char *)(rnum.buffer), sizeof(lua_Number) * sizeof(unsigned char), &err) == 0)
+        if (lua_cryptorandom_bytes_impl((unsigned char *)(rnum.buffer), sizeof(lua_Number) * sizeof(unsigned char), &err) == 0)
         {
             lua_pushnil(L);
             lua_pushinteger(L, (lua_Integer)err);
@@ -243,7 +243,7 @@ static int lua_cryptorandom_number(lua_State *L)
             is_nan_or_inf = 0;
         }
     }
-    
+
     return 2;
 }
 
