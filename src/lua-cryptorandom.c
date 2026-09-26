@@ -117,6 +117,7 @@ static int lua_cryptorandom_bytes(lua_State *L)
     size_t buffer_size;
     unsigned long err;
     unsigned char *buffer;
+    int i;
 
     /*
     ** length of the buffer used to
@@ -155,7 +156,7 @@ static int lua_cryptorandom_bytes(lua_State *L)
     else
     {
         lua_createtable(L, len, 0);
-        for (int i = 1; i <= len; i++)
+        for (i = 1; i <= len; i++)
         {
             lua_pushinteger(L, i);
             lua_pushinteger(L, 0xFF & (buffer[i - 1]));
